@@ -4,7 +4,7 @@
 
 #define START_SCR_NAME	"game"
 
-Mat4 proj_matrix;
+Mat4 view_matrix, proj_matrix;
 
 int win_width, win_height;
 float win_aspect;
@@ -45,8 +45,13 @@ void game_shutdown(void)
 
 void game_draw(void)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	static long prev_upd;
 
+	long interv = time_msec - prev_upd;
+	prev_upd = time_msec;
+	curscr->update((float)interv / 1000.0f);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	curscr->draw();
 }
 

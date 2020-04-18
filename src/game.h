@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 #include "gmath/gmath.h"
 
-extern Mat4 proj_matrix;
+extern Mat4 view_matrix, proj_matrix;
 #endif
 
 extern int win_width, win_height;
@@ -14,8 +14,8 @@ extern long time_msec;
 
 enum {
 	MOD_SHIFT	= 1,
-	MOD_ALT		= 2,
-	MOD_CTRL	= 4
+	MOD_CTRL	= 2,
+	MOD_ALT		= 4
 };
 
 /* special keys */

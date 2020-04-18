@@ -14,6 +14,7 @@ static void skeyup(int key, int x, int y);
 static void mouse(int bn, int st, int x, int y);
 
 static int fullscr;
+static unsigned int modkeys;
 
 int main(int argc, char **argv)
 {
@@ -65,6 +66,11 @@ void game_toggle_fullscreen(void)
 	game_fullscreen(fullscr);
 }
 
+unsigned int game_modkeys(void)
+{
+	return modkeys;
+}
+
 static void display(void)
 {
 	time_msec = glutGet(GLUT_ELAPSED_TIME);
@@ -90,6 +96,7 @@ static void reshape(int x, int y)
 
 static void keydown(unsigned char key, int x, int y)
 {
+	modkeys = glutGetModifiers();
 	game_keyboard(key, 1);
 }
 
@@ -101,6 +108,7 @@ static void keyup(unsigned char key, int x, int y)
 static void skeydown(int key, int x, int y)
 {
 	/* TODO */
+	modkeys = glutGetModifiers();
 }
 
 static void skeyup(int key, int x, int y)
@@ -110,5 +118,6 @@ static void skeyup(int key, int x, int y)
 
 static void mouse(int bn, int st, int x, int y)
 {
+	modkeys = glutGetModifiers();
 	game_mbutton(bn - GLUT_LEFT_BUTTON, st == GLUT_DOWN, x, y);
 }

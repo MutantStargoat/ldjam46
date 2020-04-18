@@ -16,6 +16,7 @@ public:
 	bool start();
 	void stop();
 
+	void update(float dt);
 	void draw();
 
 	void key(int key, bool press);

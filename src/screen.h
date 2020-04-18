@@ -17,6 +17,7 @@ public:
 	virtual bool start();
 	virtual void stop();
 
+	virtual void update(float dt) = 0;
 	virtual void draw() = 0;
 
 	virtual void key(int key, bool press);
