@@ -1,18 +1,13 @@
-#ifndef MESH_LOADER
-#define MESH_LOADER
+#ifndef MESH_LOADER_H_
+#define MESH_LOADER_H_
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
-#include "mesh/mesh.h"
+#include "mesh.h"
 
 class SceneFile {
-    Mesh *load_mesh(const aiMesh *);
-    void load_scene(const aiScene *);
 public:
+    std::vector<Mesh*> meshes;
 
-    std::vector<Mesh *> meshes;
-    void load(const char *fpath);
+    bool load(const char *fpath);
 };
-#endif
+
+#endif	// MESH_LOADER_H_

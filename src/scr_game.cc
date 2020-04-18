@@ -2,6 +2,8 @@
 #include "game.h"
 #include "scr_game.h"
 #include "water.h"
+#include "mesh.h"
+#include "scene_file.h"
 
 static bool ground_intersect(const Ray &ray, Vec3 *pt);
 static void disturb_water(const Vec3 &pt);
@@ -13,6 +15,8 @@ static bool bnstate[8];
 // start-end point of user interaction with the water during the frame
 static int plonkidx = -1;
 static Vec2 plonkpt[2];
+
+static Mesh *pengmesh;
 
 GameScreen::GameScreen()
 {
@@ -29,11 +33,18 @@ bool GameScreen::init()
 		fprintf(stderr, "failed to initialize water sim\n");
 		return false;
 	}
+
+	SceneFile scn;
+	if(!(scn.load("data/penguin.obj")) || scn.meshes.empty()) {
+		return false;
+	}
+	pengmesh = scn.meshes[0];
 	return true;
 }
 
 void GameScreen::destroy()
 {
+	delete pengmesh;
 	destroy_water();
 }
 
@@ -90,13 +101,7 @@ void GameScreen::draw()
 
 	draw_water();
 
-	glPushMatrix();
-	glTranslatef(0, 0.72, 0);
-	glFrontFace(GL_CW);
-	glutSolidTeapot(1.0f);
-	glFrontFace(GL_CCW);
-	glPopMatrix();
-
+	pengmesh->draw();
 }
 
 void GameScreen::key(int key, bool press)

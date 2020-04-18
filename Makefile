@@ -1,5 +1,4 @@
 ccsrc = $(wildcard src/*.cc) \
-		$(wildcard src/mesh/*.cc) \
 		$(wildcard libs/gmath/*.cc) \
 
 csrc = $(wildcard src/*.c) \
@@ -18,7 +17,7 @@ warn = -pedantic -Wall
 dbg = -g
 #opt = -O3 -ffast-math
 inc = -Ilibs -Ilibs/imago -Ilibs/libpng -Ilibs/zlib -Ilibs/libjpeg \
-	  -Ilibs/ogg -Ilibs/vorbis -Isrc
+	  -Ilibs/ogg -Ilibs/vorbis
 
 CFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc)
 CXXFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc)
