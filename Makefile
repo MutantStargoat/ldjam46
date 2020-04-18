@@ -1,4 +1,5 @@
 ccsrc = $(wildcard src/*.cc) \
+		$(wildcard src/mesh/*.cc) \
 		$(wildcard libs/gmath/*.cc) \
 
 csrc = $(wildcard src/*.c) \
@@ -17,7 +18,7 @@ warn = -pedantic -Wall
 dbg = -g
 #opt = -O3 -ffast-math
 inc = -Ilibs -Ilibs/imago -Ilibs/libpng -Ilibs/zlib -Ilibs/libjpeg \
-	  -Ilibs/ogg -Ilibs/vorbis
+	  -Ilibs/ogg -Ilibs/vorbis -Isrc
 
 CFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc)
 CXXFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc)
@@ -30,11 +31,12 @@ ifeq ($(sys), mingw)
 	bin = game.exe
 
 	libgl = -lopengl32 -lglu32 -lglew32
+	#TODO(zisis): link with assimp on Windoze
 	libsys = -lmingw32 -mconsole
 
 else
 	libgl = -lGL -lGLU -lglut -lGLEW
-	libsys = -ldl -lm
+	libsys = -ldl -lm -lassimp
 endif
 
 $(bin): $(obj)

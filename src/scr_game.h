@@ -2,8 +2,10 @@
 #define SCR_GAME_H_
 
 #include "screen.h"
+#include "scene_file.h"
 
 class GameScreen : public BaseScreen {
+	SceneFile scene_file;
 public:
 	GameScreen();
 	~GameScreen();

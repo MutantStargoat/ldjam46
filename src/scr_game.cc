@@ -1,7 +1,6 @@
 #include "opengl.h"
 #include "game.h"
 #include "scr_game.h"
-
 static float cam_theta, cam_phi = 25, cam_dist = 8;
 static int mouse_x, mouse_y;
 static bool bnstate[8];
@@ -58,6 +57,7 @@ void GameScreen::draw()
 	glutSolidTeapot(1.0f);
 	glFrontFace(GL_CCW);
 	glPopMatrix();
+
 }
 
 void GameScreen::key(int key, bool press)
