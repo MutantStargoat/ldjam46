@@ -6,3 +6,5 @@
 *.exe
 *.swo
 *.pdb
+data
+game
