@@ -1,0 +1,8 @@
+*.o
+*.swp
+*.d
+*.png
+*.jpg
+*.exe
+*.swo
+*.pdb
