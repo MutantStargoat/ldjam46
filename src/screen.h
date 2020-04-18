@@ -8,6 +8,7 @@ public:
 	const char *name;
 	BaseScreen *prev;
 
+	BaseScreen();
 	virtual ~BaseScreen();
 
 	virtual bool init();

@@ -62,6 +62,10 @@ void pop_screen()
 	curscr->start();
 }
 
+BaseScreen::BaseScreen()
+{
+	prev = 0;
+}
 
 BaseScreen::~BaseScreen()
 {
