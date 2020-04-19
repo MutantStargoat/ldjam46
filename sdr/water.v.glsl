@@ -1,4 +1,5 @@
 varying vec3 vpos, vnorm, wviewdir, wnorm;
+varying float wrad;
 
 void main()
 {
@@ -9,6 +10,7 @@ void main()
 	vnorm = gl_NormalMatrix * gl_Normal;
 
 	vec3 wpos = gl_Vertex.xyz;
+	wrad = length(wpos);
 	wnorm = gl_Normal.xyz;
 	vec3 cam_pos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 	wviewdir = cam_pos - wpos;
