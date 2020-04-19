@@ -1,6 +1,7 @@
 #include "opengl.h"
 #include "game.h"
 #include "screen.h"
+#include "mesh.h"
 
 Mat4 view_matrix, proj_matrix;
 
@@ -54,6 +55,9 @@ int game_init(int argc, char **argv)
 			}
 		}
 	}
+
+	Mesh::use_custom_sdr_attr = false;
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_LIGHTING);

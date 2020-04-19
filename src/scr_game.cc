@@ -18,8 +18,6 @@ static bool bnstate[8];
 static int plonkidx = -1;
 static Vec2 plonkpt[2];
 
-static unsigned int sdr_water;
-
 static Mesh *pengmesh;
 
 static bool pause;
@@ -37,12 +35,8 @@ GameScreen::~GameScreen()
 
 bool GameScreen::init()
 {
-	if(!init_water(200, 200, 80.0f)) {
+	if(!init_water(200, 200, 100.0f)) {
 		fprintf(stderr, "failed to initialize water sim\n");
-		return false;
-	}
-
-	if(!(sdr_water = create_program_load("sdr/water.v.glsl", "sdr/water.p.glsl"))) {
 		return false;
 	}
 
@@ -68,7 +62,6 @@ void GameScreen::destroy()
 bool GameScreen::start()
 {
 	// reset water TODO
-	glEnable(GL_NORMALIZE);
 	return true;
 }
 
@@ -109,7 +102,7 @@ void GameScreen::update(float dt)
 void GameScreen::draw()
 {
 	glMatrixMode(GL_PROJECTION);
-	glLoadTransposeMatrixf(proj_matrix.m[0]);
+	glLoadMatrixf(proj_matrix.m[0]);
 
 	view_matrix = Mat4::identity;
 	view_matrix.pre_translate(0, 0, -cam_dist);
@@ -120,15 +113,7 @@ void GameScreen::draw()
 	glLoadMatrixf(view_matrix.m[0]);
 
 	draw_skybox();
-
-	bind_program(sdr_water);
-	bind_texture(skytex);
-
 	draw_water();
-
-	bind_texture(0);
-	bind_program(0);
-
 	pengmesh->draw();
 }
 

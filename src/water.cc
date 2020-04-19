@@ -6,6 +6,8 @@
 #include "opengl.h"
 #include "mesh.h"
 #include "game.h"
+#include "sdr.h"
+#include "skybox.h"
 
 #define VERTS_PER_SAMPLE	1
 #define SURF_CUBIC
@@ -28,8 +30,11 @@ static float *dest_buf, *src_buf;
 static int xsz, ysz, vxsz, vysz;
 static float scale;
 
+static unsigned int sdr;
+
 static Mesh *mesh;
 static MeshJob *jobs;
+
 
 bool init_water(int width, int height, float size)
 {
@@ -103,6 +108,10 @@ bool init_water(int width, int height, float size)
 	mesh->set_attrib_usage(MESH_ATTR_NORMAL, GL_STREAM_DRAW);
 	mesh->set_attrib_usage(MESH_ATTR_TANGENT, GL_STREAM_DRAW);
 
+	if(!(sdr = create_program_load("sdr/water.v.glsl", "sdr/water.p.glsl"))) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -114,6 +123,7 @@ void destroy_water()
 	delete [] buf[1];
 
 	delete mesh;
+	free_program(sdr);
 }
 
 
@@ -298,7 +308,12 @@ void draw_water()
 	}
 
 	tpool_wait(tpool);
+
+	bind_program(sdr);
+	bind_texture(skytex);
 	mesh->draw();
+	bind_texture(0);
+	bind_program(0);
 }
 
 

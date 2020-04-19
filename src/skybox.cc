@@ -3,15 +3,20 @@
 #include "mesh.h"
 #include "meshgen.h"
 #include "game.h"
+#include "sdr.h"
 
 Texture *skytex;
 static Mesh *skybox;
+static unsigned int sdr;
 
 bool init_skybox()
 {
 	skytex = new Texture;
 	if(!skytex->load_cube("data/skybox.jpg")) {
-		delete skytex;
+		return false;
+	}
+
+	if(!(sdr = create_program_load("sdr/skybox.v.glsl", "sdr/skybox.p.glsl"))) {
 		return false;
 	}
 
@@ -22,6 +27,7 @@ bool init_skybox()
 
 void destroy_skybox()
 {
+	free_program(sdr);
 	delete skytex;
 	delete skybox;
 }
@@ -30,35 +36,22 @@ void draw_skybox()
 {
 	Mat4 mat = view_matrix.upper3x3();
 
-	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadMatrixf(mat.m[0]);
-
-	glMatrixMode(GL_TEXTURE);
-	glLoadTransposeMatrixf(mat.m[0]);
 
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	glDisable(GL_LIGHTING);
-	glEnable(GL_TEXTURE_GEN_S);
-	glEnable(GL_TEXTURE_GEN_T);
-	glEnable(GL_TEXTURE_GEN_R);
 
-	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
-	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
-	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
-
-	glEnable(GL_TEXTURE_CUBE_MAP);
+	bind_program(sdr);
 	bind_texture(skytex);
+
 	skybox->draw();
+
 	bind_texture(0);
+	bind_program(0);
 
 	glPopAttrib();
 
-	glMatrixMode(GL_TEXTURE);
-	glLoadIdentity();
-
-	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 }
