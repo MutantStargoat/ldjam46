@@ -33,6 +33,20 @@ bool SceneFile::load(const char *fname)
 	return true;
 }
 
+Mesh *SceneFile::find_mesh(char *name) {
+	Mesh *found;
+
+	found = NULL;
+	for (unsigned int i = 0; i < meshes.size(); i++) {
+		if (!strcmp(meshes[i]->get_name(), name)) {
+			found = meshes[i];
+			break;
+		}
+	}
+
+	return found;
+}
+
 
 static Mesh *load_mesh(const aiMesh *ai_mesh)
 {

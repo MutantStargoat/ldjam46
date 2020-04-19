@@ -18,7 +18,7 @@ warn = -pedantic -Wall -Wno-format-overflow
 dbg = -g
 opt = -O3 -ffast-math
 inc = -Ilibs -Ilibs/imago -Ilibs/libpng -Ilibs/zlib -Ilibs/libjpeg \
-	  -Ilibs/ogg -Ilibs/vorbis
+	  -Ilibs/ogg -Ilibs/vorbis -Ilibs/drawtext
 def = -DDEV_BUILD -DNO_FREETYPE
 
 CFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc) $(def)
