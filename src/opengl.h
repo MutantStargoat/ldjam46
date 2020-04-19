@@ -4,6 +4,13 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 
+#ifdef __unix__
+#include <GL/glxew.h>
+#endif
+#ifdef WIN32
+#include <GL/wglew.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

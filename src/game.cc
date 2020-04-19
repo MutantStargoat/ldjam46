@@ -51,6 +51,27 @@ int game_init(int argc, char **argv)
 		glEnable(GL_MULTISAMPLE);
 	}
 
+#ifdef __unix__
+	if(GLXEW_EXT_swap_control) {
+		int val = 0;
+		if(opt.vsync) {
+			val = GLXEW_EXT_swap_control_tear ? -1 : 1;
+		}
+		glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), val);
+	} else if(GLXEW_SGI_swap_control) {
+		glXSwapIntervalSGI(opt.vsync ? 1 : 0);
+	}
+#endif
+#ifdef WIN32
+	if(WGLEW_EXT_swap_control) {
+		int val = 0;
+		if(opt.vsync) {
+			val = WGLEW_EXT_swap_control_tear ? -1 : 1;
+		}
+		wglSwapIntervalEXT(val);
+	}
+#endif
+
 	glClearColor(0.02, 0.02, 0.02, 1);
 	return 0;
 }
