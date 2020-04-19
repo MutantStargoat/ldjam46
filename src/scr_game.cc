@@ -6,6 +6,7 @@
 #include "scene_file.h"
 #include "skybox.h"
 #include "sdr.h"
+#include "tentacle.h"
 
 static bool ground_intersect(const Ray &ray, Vec3 *pt);
 static void disturb_water(const Vec3 &pt);
@@ -22,6 +23,8 @@ static Mesh *pengmesh;
 
 static bool pause;
 static bool wireframe;
+
+static Tentacle tentacle;
 
 
 GameScreen::GameScreen()
@@ -45,10 +48,16 @@ bool GameScreen::init()
 		return false;
 	}
 
+	if (!tentacle.init()) {
+		fprintf(stderr, "Failed to initialize tentacle.\n");
+		return false;
+	}
+
 	SceneFile scn;
 	if(!(scn.load("data/penguin.obj")) || scn.meshes.empty()) {
 		return false;
 	}
+
 	pengmesh = scn.meshes[0];
 	return true;
 }
@@ -115,6 +124,9 @@ void GameScreen::draw()
 	draw_skybox();
 	draw_water();
 	pengmesh->draw();
+
+	tentacle.pos = Vec3(0, 0.5, 0);
+	tentacle.draw(time_msec);
 }
 
 void GameScreen::key(int key, bool press)
