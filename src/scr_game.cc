@@ -18,6 +18,9 @@ static Vec2 plonkpt[2];
 
 static Mesh *pengmesh;
 
+static bool pause;
+static bool wireframe;
+
 GameScreen::GameScreen()
 {
 	name = "game";
@@ -29,7 +32,7 @@ GameScreen::~GameScreen()
 
 bool GameScreen::init()
 {
-	if(!init_water(200, 200, 100.0f)) {
+	if(!init_water(160, 160, 60.0f)) {
 		fprintf(stderr, "failed to initialize water sim\n");
 		return false;
 	}
@@ -61,6 +64,8 @@ void GameScreen::stop()
 
 void GameScreen::update(float dt)
 {
+	if(pause) return;
+
 	// if we had any interaction this frame (plonkidx != -1) then add a series of plonks
 	// equally spaced from start to finish (plonkpt[0] to plonkpt[1])
 	if(plonkidx >= 0) {
@@ -73,10 +78,11 @@ void GameScreen::update(float dt)
 			len = distance(plonkpt[0], plonkpt[1]);
 		}
 
-		int num_plonks = 1 + (int)(5.0 * len);
+		int num_plonks = 1 + (int)(10.0 * len);
 		for(int i=0; i<num_plonks; i++) {
 			Vec2 pt = lerp(plonkpt[0], plonkpt[1], (float)i / (float)(num_plonks - 1));
-			plonk_gauss(pt.x, pt.y, 0.05 * dt / (float)num_plonks, 0.2);
+			//plonk_gauss(pt.x, pt.y, 0.05 * dt / (float)num_plonks, 0.2);
+			plonk_gauss(pt.x, pt.y, 0.05 * dt / (float)num_plonks, 0.085);
 		}
 
 		// reset the plonk index so that we'll start a new user interaction on click
@@ -110,6 +116,15 @@ void GameScreen::key(int key, bool press)
 		switch(key) {
 		case 27:
 			pop_screen();
+			break;
+
+		case 'w':
+			wireframe = !wireframe;
+			glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+			break;
+
+		case ' ':
+			pause = !pause;
 			break;
 
 		default:

@@ -15,7 +15,7 @@ bin = game
 
 warn = -pedantic -Wall
 dbg = -g
-#opt = -O3 -ffast-math
+opt = -O3 -ffast-math
 inc = -Ilibs -Ilibs/imago -Ilibs/libpng -Ilibs/zlib -Ilibs/libjpeg \
 	  -Ilibs/ogg -Ilibs/vorbis
 

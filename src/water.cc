@@ -4,15 +4,20 @@
 #include "gmath/gmath.h"
 #include "water.h"
 #include "opengl.h"
+#include "mesh.h"
+
+#define VERTS_PER_SAMPLE	1
+#define SURF_CUBIC
 
 static void water_iter();
 static inline float water(int x, int y);
-static inline void water_vertex(int x, int y, float u, float v, float du, float dv);
 
 static float *buf[2];
 static float *dest_buf, *src_buf;
-static int xsz, ysz;
+static int xsz, ysz, vxsz, vysz;
 static float scale;
+
+static Mesh *mesh;
 
 
 bool init_water(int width, int height, float size)
@@ -21,7 +26,11 @@ bool init_water(int width, int height, float size)
 	ysz = height;
 	scale = size;
 
+	vxsz = width * VERTS_PER_SAMPLE;
+	vysz = height * VERTS_PER_SAMPLE;
+
 	int sz = xsz * ysz;
+	int vsz = vxsz * vysz;
 
 	for(int i=0; i<2; i++) {
 		buf[i] = new float[sz];
@@ -30,6 +39,42 @@ bool init_water(int width, int height, float size)
 	dest_buf = buf[0];
 	src_buf = buf[1];
 
+	int num_faces = (vxsz - 1) * (vysz - 1);
+	int num_idx = num_faces * 6;
+
+	mesh = new Mesh;
+	Vec3 *vptr = (Vec3*)mesh->set_attrib_data(MESH_ATTR_VERTEX, 3, vsz, 0);
+	Vec3 *nptr = (Vec3*)mesh->set_attrib_data(MESH_ATTR_NORMAL, 3, vsz, 0);
+	Vec3 *tptr = (Vec3*)mesh->set_attrib_data(MESH_ATTR_TANGENT, 3, vsz, 0);
+	Vec2 *uvptr = (Vec2*)mesh->set_attrib_data(MESH_ATTR_TEXCOORD, 2, vsz, 0);
+	unsigned int *iptr = (unsigned int*)mesh->set_index_data(num_idx, 0);
+
+	int vidx = 0;
+	for(int i=0; i<vysz; i++) {
+		float v = (float)i / (float)(vysz - 1);
+		for(int j=0; j<vxsz; j++) {
+			float u = (float)j / (float)(vxsz - 1);
+
+			*vptr++ = Vec3(0, 0, 0);
+			*nptr++ = Vec3(0, 1, 0);
+			*tptr++ = Vec3(1, 0, 0);
+			*uvptr++ = Vec2(u, v);
+
+			if(i < vysz - 1 && j < vxsz - 1) {
+				*iptr++ = vidx;
+				*iptr++ = vidx + vxsz;
+				*iptr++ = vidx + vxsz + 1;
+				*iptr++ = vidx;
+				*iptr++ = vidx + vxsz + 1;
+				*iptr++ = vidx + 1;
+			}
+			vidx++;
+		}
+	}
+	mesh->set_attrib_usage(MESH_ATTR_VERTEX, GL_STREAM_DRAW);
+	mesh->set_attrib_usage(MESH_ATTR_NORMAL, GL_STREAM_DRAW);
+	mesh->set_attrib_usage(MESH_ATTR_TANGENT, GL_STREAM_DRAW);
+
 	return true;
 }
 
@@ -37,6 +82,8 @@ void destroy_water()
 {
 	delete [] buf[0];
 	delete [] buf[1];
+
+	delete mesh;
 }
 
 
@@ -144,48 +191,110 @@ static inline float water(int x, int y)
 	if(x >= 0 && x < xsz && y >= 0 && y < ysz) {
 		return dest_buf[y * xsz + x];
 	}
-	return 0.0;
+	return -10.0f;
 }
 
-static inline void water_vertex(int x, int y, float u, float v, float du, float dv)
+/* cubic interpolation grid (SURF_CUBIC defined)
+ * pp --- 0p --- 1p --- np
+ *  |      |      |      |
+ * p0 --- 00 --- 10 --- n0
+ *  |      |      |      |
+ * p1 --- 01 --- 11 --- n1
+ *  |      |      |      |
+ * pn --- 0n --- 1n --- nn
+ */
+
+static inline float nwater(float u, float v)
 {
-	float xpos = u - 0.5;
-	float ypos = v - 0.5;
-	float height = water(x, y);
+	float fxsz = (float)xsz;
+	float fysz = (float)ysz;
 
-	float dfdx = water(x + 1, y) - height;
-	float dfdy = water(x, y + 1) - height;
+	float floorx = floor(u * fxsz);
+	float floory = floor(v * fysz);
 
-	Vec3 tang(du, dfdx, 0.0);
-	Vec3 bitan(0.0, dfdy, dv);
-	Vec3 norm = -normalize(cross(tang, bitan));
+	float x0 = floorx / fxsz;
+	float y0 = floory / fysz;
 
-	glColor3f(norm.x * 0.5 + 0.5, norm.y * 0.5 + 0.5, norm.z * 0.5 + 0.5);
-	glNormal3f(norm.x, norm.y, norm.z);
+	float s = (u - x0) * fxsz;
+	float t = (v - y0) * fysz;
 
-	glTexCoord2f(u, v);
-	glVertex3f(xpos * scale, height * scale, ypos * scale);
+	int x = (int)floorx;
+	int y = (int)floory;
+
+	float h00 = water(x, y);
+	float h10 = water(x + 1, y);
+	float h01 = water(x, y + 1);
+	float h11 = water(x + 1, y + 1);
+
+#ifdef SURF_CUBIC
+	float hpp = water(x - 1, y - 1);
+	float h0p = water(x, y - 1);
+	float h1p = water(x + 1, y - 1);
+	float hnp = water(x + 2, y - 1);
+
+	float hp0 = water(x - 1, y);
+	float hn0 = water(x + 2, y);
+
+	float hp1 = water(x - 1, y + 1);
+	float hn1 = water(x + 2, y + 1);
+
+	float hpn = water(x - 1, y + 2);
+	float h0n = water(x, y + 2);
+	float h1n = water(x + 1, y + 2);
+	float hnn = water(x + 2, y + 2);
+
+	float a = bspline(hpp, h0p, h1p, hnp, s);
+	float b = bspline(hp0, h00, h10, hn0, s);
+	float c = bspline(hp1, h01, h11, hn1, s);
+	float d = bspline(hpn, h0n, h1n, hnn, s);
+
+	return bspline(a, b, c, d, t);
+#else	/* !SURF_CUBIC */
+	float a = lerp(h00, h10, s);
+	float b = lerp(h01, h11, s);
+	return lerp(a, b, t);
+#endif
 }
 
 void draw_water()
 {
-	float du = 1.0 / (float)xsz;
-	float dv = 1.0 / (float)ysz;
+	float du = 1.0f / (float)vxsz;
+	float dv = 1.0f / (float)vysz;
 
-	glBegin(GL_QUADS);
-	glColor3f(1, 1, 1);
-	float v = 0.0;
-	for(int i=0; i<ysz-1; i++) {
-		float u = 0.0;
-		for(int j=0; j<xsz-1; j++) {
-			water_vertex(j, i + 1, u, v + dv, du, dv);
-			water_vertex(j + 1, i + 1, u + du, v + dv, du, dv);
-			water_vertex(j + 1, i, u + du, v, du, dv);
-			water_vertex(j, i, u, v, du, dv);
+	Vec3 *vptr = (Vec3*)mesh->get_attrib_data(MESH_ATTR_VERTEX);
+	Vec3 *nptr = (Vec3*)mesh->get_attrib_data(MESH_ATTR_NORMAL);
+	Vec3 *tptr = (Vec3*)mesh->get_attrib_data(MESH_ATTR_TANGENT);
+
+	float v = 0.0f;
+	for(int i=0; i<vysz; i++) {
+		float u = 0.0f;
+		float z = (v - 0.5f) * scale;
+
+		for(int j=0; j<vxsz; j++) {
+			float x = (u - 0.5f) * scale;
+#if VERTS_PER_SAMPLE == 1 && !defined(SURF_CUBIC)
+			float y = water(j, i);
+			float dfdx = water(j + 1, i) - y;
+			float dfdy = water(j, i + 1) - y;
+#else	/* supersampling */
+			float y = nwater(u, v);
+			float dfdx = nwater(u + du, v) - y;
+			float dfdy = nwater(u, v + dv) - y;
+#endif
+
+			Vec3 tang = Vec3(du, dfdx, 0.0f);
+			Vec3 bitan = Vec3(0.0f, dfdy, dv);
+			tang.normalize();
+			bitan.normalize();
+
+			*vptr++ = Vec3(x, y * scale, z);
+			*nptr++ = -cross(tang, bitan);
+			*tptr++ = tang;
 
 			u += du;
 		}
 		v += dv;
 	}
-	glEnd();
+
+	mesh->draw();
 }
