@@ -32,7 +32,7 @@ GameScreen::~GameScreen()
 
 bool GameScreen::init()
 {
-	if(!init_water(160, 160, 60.0f)) {
+	if(!init_water(200, 200, 60.0f)) {
 		fprintf(stderr, "failed to initialize water sim\n");
 		return false;
 	}

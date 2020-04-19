@@ -5,12 +5,23 @@
 #include "water.h"
 #include "opengl.h"
 #include "mesh.h"
+#include "game.h"
 
 #define VERTS_PER_SAMPLE	1
 #define SURF_CUBIC
 
+struct MeshJob {
+	float du, dv;
+	float v;
+	float z;
+	int row;
+
+	Vec3 *vptr, *nptr, *tptr;
+};
+
 static void water_iter();
 static inline float water(int x, int y);
+static void updmesh_worker(void *wdata);
 
 static float *buf[2];
 static float *dest_buf, *src_buf;
@@ -18,7 +29,7 @@ static int xsz, ysz, vxsz, vysz;
 static float scale;
 
 static Mesh *mesh;
-
+static MeshJob *jobs;
 
 bool init_water(int width, int height, float size)
 {
@@ -48,6 +59,23 @@ bool init_water(int width, int height, float size)
 	Vec3 *tptr = (Vec3*)mesh->set_attrib_data(MESH_ATTR_TANGENT, 3, vsz, 0);
 	Vec2 *uvptr = (Vec2*)mesh->set_attrib_data(MESH_ATTR_TEXCOORD, 2, vsz, 0);
 	unsigned int *iptr = (unsigned int*)mesh->set_index_data(num_idx, 0);
+
+	float du = 1.0f / (float)vxsz;
+	float dv = 1.0f / (float)vysz;
+
+	jobs = new MeshJob[vysz];
+	for(int i=0; i<vysz; i++) {
+		float v = (float)i * dv;
+		jobs[i].row = i;
+		jobs[i].du = du;
+		jobs[i].dv = dv;
+		jobs[i].v = v;
+		jobs[i].z = (v - 0.5f) * scale;
+		int offs = i * vxsz;
+		jobs[i].vptr = vptr + offs;
+		jobs[i].nptr = nptr + offs;
+		jobs[i].tptr = tptr + offs;
+	}
 
 	int vidx = 0;
 	for(int i=0; i<vysz; i++) {
@@ -80,6 +108,8 @@ bool init_water(int width, int height, float size)
 
 void destroy_water()
 {
+	delete [] jobs;
+
 	delete [] buf[0];
 	delete [] buf[1];
 
@@ -258,43 +288,50 @@ static inline float nwater(float u, float v)
 
 void draw_water()
 {
-	float du = 1.0f / (float)vxsz;
-	float dv = 1.0f / (float)vysz;
+	/* mark the attribute arrays we're going to modify as dirty */
+	mesh->get_attrib_data(MESH_ATTR_VERTEX);
+	mesh->get_attrib_data(MESH_ATTR_NORMAL);
+	mesh->get_attrib_data(MESH_ATTR_TANGENT);
 
-	Vec3 *vptr = (Vec3*)mesh->get_attrib_data(MESH_ATTR_VERTEX);
-	Vec3 *nptr = (Vec3*)mesh->get_attrib_data(MESH_ATTR_NORMAL);
-	Vec3 *tptr = (Vec3*)mesh->get_attrib_data(MESH_ATTR_TANGENT);
-
-	float v = 0.0f;
 	for(int i=0; i<vysz; i++) {
-		float u = 0.0f;
-		float z = (v - 0.5f) * scale;
-
-		for(int j=0; j<vxsz; j++) {
-			float x = (u - 0.5f) * scale;
-#if VERTS_PER_SAMPLE == 1 && !defined(SURF_CUBIC)
-			float y = water(j, i);
-			float dfdx = water(j + 1, i) - y;
-			float dfdy = water(j, i + 1) - y;
-#else	/* supersampling */
-			float y = nwater(u, v);
-			float dfdx = nwater(u + du, v) - y;
-			float dfdy = nwater(u, v + dv) - y;
-#endif
-
-			Vec3 tang = Vec3(du, dfdx, 0.0f);
-			Vec3 bitan = Vec3(0.0f, dfdy, dv);
-			tang.normalize();
-			bitan.normalize();
-
-			*vptr++ = Vec3(x, y * scale, z);
-			*nptr++ = -cross(tang, bitan);
-			*tptr++ = tang;
-
-			u += du;
-		}
-		v += dv;
+		tpool_enqueue(tpool, jobs + i, updmesh_worker, 0);
 	}
 
+	tpool_wait(tpool);
 	mesh->draw();
+}
+
+
+static void updmesh_worker(void *wdata)
+{
+	MeshJob *job = (MeshJob*)wdata;
+
+	Vec3 *vptr = job->vptr;
+	Vec3 *nptr = job->nptr;
+	Vec3 *tptr = job->tptr;
+
+	float u = 0.0f;
+	for(int i=0; i<vxsz; i++) {
+		float x = (u - 0.5f) * scale;
+#if VERTS_PER_SAMPLE == 1 && !defined(SURF_CUBIC)
+		float y = water(i, job->row);
+		float dfdx = water(i + 1, job->row) - y;
+		float dfdy = water(i, job->row + 1) - y;
+#else	/* supersampling */
+		float y = nwater(u, job->v);
+		float dfdx = nwater(u + job->du, job->v) - y;
+		float dfdy = nwater(u, job->v + job->dv) - y;
+#endif
+
+		Vec3 tang = Vec3(job->du, dfdx, 0.0f);
+		Vec3 bitan = Vec3(0.0f, dfdy, job->dv);
+		tang.normalize();
+		bitan.normalize();
+
+		*vptr++ = Vec3(x, y * scale, job->z);
+		*nptr++ = -cross(tang, bitan);
+		*tptr++ = tang;
+
+		u += job->du;
+	}
 }
