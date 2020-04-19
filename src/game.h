@@ -1,6 +1,9 @@
 #ifndef GAME_H_
 #define GAME_H_
 
+#include "tpool.h"
+#include "drawtext.h"
+
 #ifdef __cplusplus
 #include "gmath/gmath.h"
 
@@ -11,6 +14,9 @@ extern int win_width, win_height;
 extern float win_aspect;
 
 extern long time_msec;
+
+extern struct thread_pool *tpool;
+extern struct dtx_font *dbgfont;
 
 enum {
 	MOD_SHIFT	= 1,
