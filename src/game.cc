@@ -2,8 +2,6 @@
 #include "game.h"
 #include "screen.h"
 
-#define START_SCR_NAME	"game"
-
 Mat4 view_matrix, proj_matrix;
 
 int win_width, win_height;
@@ -37,9 +35,9 @@ int game_init(int argc, char **argv)
 	if(!init_screens()) {
 		return -1;
 	}
-	BaseScreen *start_scr = get_screen(START_SCR_NAME);
+	BaseScreen *start_scr = get_screen(opt.startscr);
 	if(!start_scr) {
-		fprintf(stderr, "failed to find starting screen: %s\n", START_SCR_NAME);
+		fprintf(stderr, "failed to find screen: %s\n", opt.startscr);
 		return -1;
 	}
 	push_screen(start_scr);
@@ -48,6 +46,10 @@ int game_init(int argc, char **argv)
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+
+	if(opt.multisample && GLEW_ARB_multisample) {
+		glEnable(GL_MULTISAMPLE);
+	}
 
 	glClearColor(0.02, 0.02, 0.02, 1);
 	return 0;
@@ -71,6 +73,7 @@ void game_draw(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	curscr->draw();
 
+#ifdef DEV_BUILD
 	/* fps counter */
 	static char fpsbuf[16];
 	static long frame, prev_fps_upd;
@@ -102,6 +105,7 @@ void game_draw(void)
 	dtx_flush();
 
 	glPopAttrib();
+#endif
 }
 
 void game_reshape(int x, int y)

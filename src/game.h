@@ -1,6 +1,7 @@
 #ifndef GAME_H_
 #define GAME_H_
 
+#include "opt.h"
 #include "tpool.h"
 #include "drawtext.h"
 

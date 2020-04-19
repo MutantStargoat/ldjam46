@@ -18,9 +18,19 @@ static unsigned int modkeys;
 
 int main(int argc, char **argv)
 {
+	unsigned int flags = GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE;
+
 	glutInit(&argc, argv);
-	glutInitWindowSize(1280, 800);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE | GLUT_MULTISAMPLE);
+
+	if(parse_args(argc, argv) == -1) {
+		return 1;
+	}
+	if(opt.multisample) {
+		flags |= GLUT_MULTISAMPLE;
+	}
+
+	glutInitWindowSize(opt.width, opt.height);
+	glutInitDisplayMode(flags);
 	glutCreateWindow("ldjam46 keepalive");
 
 	glutDisplayFunc(display);
@@ -32,6 +42,10 @@ int main(int argc, char **argv)
 	glutSpecialUpFunc(skeyup);
 	glutMouseFunc(mouse);
 	glutMotionFunc(game_mmotion);
+
+	if(opt.fullscreen) {
+		game_fullscreen(1);
+	}
 
 	if(game_init(argc, argv) == -1) {
 		return 1;

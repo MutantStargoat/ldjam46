@@ -19,7 +19,7 @@ dbg = -g
 opt = -O3 -ffast-math
 inc = -Ilibs -Ilibs/imago -Ilibs/libpng -Ilibs/zlib -Ilibs/libjpeg \
 	  -Ilibs/ogg -Ilibs/vorbis
-def = -DNO_FREETYPE
+def = -DDEV_BUILD -DNO_FREETYPE
 
 CFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc) $(def)
 CXXFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc) $(def)
