@@ -5,7 +5,7 @@
 
 #ifdef DEV_BUILD
 #define DEF_FS		0
-#define DEF_VSYNC	0
+#define DEF_VSYNC	1
 #define DEF_SSCR	"game"
 #else
 #define DEF_FS		1
@@ -18,6 +18,7 @@ struct options opt = {
 	DEF_FS,
 	DEF_VSYNC,
 	1,				/* multisample */
+	1,				/* sRGB */
 	DEF_SSCR
 };
 
@@ -46,6 +47,8 @@ int parse_args(int argc, char **argv)
 				opt.multisample = 1;
 			} else if(strcmp(argv[i], "-noaa") == 0) {
 				opt.multisample = 0;
+			} else if(strcmp(argv[i], "-nosrgb") == 0) {
+				opt.srgb = 0;
 			} else if(strcmp(argv[i], "-scr") == 0) {
 				if(!argv[++i]) {
 					fprintf(stderr, "-scr must be followed by a screen name\n");
@@ -76,6 +79,7 @@ static void print_usage(const char *argv0)
 	printf(" -fs/-win         start fullscreen/windowed\n");
 	printf(" -vsync/-novsync  enable/disable vsync\n");
 	printf(" -aa/-noaa        enable/disbale anti-aliasing\n");
+	printf(" -nosrgb          disable sRGB color space (only in case of emergency)\n");
 	printf(" -scr <name>      starting screen name\n");
 	printf(" -h,-help         print usage and exit\n");
 }

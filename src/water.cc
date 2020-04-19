@@ -221,7 +221,7 @@ static inline float water(int x, int y)
 	if(x >= 0 && x < xsz && y >= 0 && y < ysz) {
 		return dest_buf[y * xsz + x];
 	}
-	return -10.0f;
+	return 0.0f;
 }
 
 /* cubic interpolation grid (SURF_CUBIC defined)

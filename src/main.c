@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <GL/glut.h>
+#include <GL/freeglut.h>
 #include "game.h"
 
 static void display(void);
@@ -24,6 +24,9 @@ int main(int argc, char **argv)
 
 	if(parse_args(argc, argv) == -1) {
 		return 1;
+	}
+	if(opt.srgb) {
+		flags |= GLUT_SRGB;
 	}
 	if(opt.multisample) {
 		flags |= GLUT_MULTISAMPLE;

@@ -6,6 +6,7 @@ struct options {
 	int fullscreen;
 	int vsync;
 	int multisample;
+	int srgb;
 	char *startscr;
 };
 

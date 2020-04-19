@@ -4,6 +4,8 @@
 #include "water.h"
 #include "mesh.h"
 #include "scene_file.h"
+#include "skybox.h"
+#include "sdr.h"
 
 static bool ground_intersect(const Ray &ray, Vec3 *pt);
 static void disturb_water(const Vec3 &pt);
@@ -16,10 +18,13 @@ static bool bnstate[8];
 static int plonkidx = -1;
 static Vec2 plonkpt[2];
 
+static unsigned int sdr_water;
+
 static Mesh *pengmesh;
 
 static bool pause;
 static bool wireframe;
+
 
 GameScreen::GameScreen()
 {
@@ -32,8 +37,17 @@ GameScreen::~GameScreen()
 
 bool GameScreen::init()
 {
-	if(!init_water(200, 200, 60.0f)) {
+	if(!init_water(200, 200, 80.0f)) {
 		fprintf(stderr, "failed to initialize water sim\n");
+		return false;
+	}
+
+	if(!(sdr_water = create_program_load("sdr/water.v.glsl", "sdr/water.p.glsl"))) {
+		return false;
+	}
+
+	if(!init_skybox()) {
+		fprintf(stderr, "failed to initialize skybox\n");
 		return false;
 	}
 
@@ -105,7 +119,15 @@ void GameScreen::draw()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(view_matrix.m[0]);
 
+	draw_skybox();
+
+	bind_program(sdr_water);
+	bind_texture(skytex);
+
 	draw_water();
+
+	bind_texture(0);
+	bind_program(0);
 
 	pengmesh->draw();
 }

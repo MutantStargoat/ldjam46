@@ -42,6 +42,18 @@ int game_init(int argc, char **argv)
 	}
 	push_screen(start_scr);
 
+	if(GLEW_ARB_framebuffer_sRGB || GLEW_EXT_framebuffer_sRGB) {
+		if(opt.srgb) {
+			int srgb_capable;
+			glGetIntegerv(GL_FRAMEBUFFER_SRGB_CAPABLE_EXT, &srgb_capable);
+			printf("Framebuffer %s sRGB-capable\n", srgb_capable ? "is" : "is not");
+			if(srgb_capable) {
+				glEnable(GL_FRAMEBUFFER_SRGB);
+			} else {
+				opt.srgb = 0;
+			}
+		}
+	}
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_LIGHTING);
