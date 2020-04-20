@@ -3,8 +3,8 @@
 
 #define AIR_FRICTION	0.001f
 #define WATER_FRICTION	0.001f
-#define BUOYANCY		60.0f
-#define WAVE_PUSH		900.0f
+#define BUOYANCY		20.0f
+#define WAVE_PUSH		1200.0f
 
 SimWorld::SimWorld()
 {

@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "scene_file.h"
 #include "texture.h"
+#include "game.h"
 
 static Mesh *mesh;
 static Texture *tex;
@@ -44,6 +45,14 @@ void Penguin::update(float dt)
 
 void Penguin::draw()
 {
+	world_matrix.translation(pos.x, pos.y, pos.z);
+	if(parent) {
+		world_matrix *= parent->xform;
+	}
+
+	glPushMatrix();
+	glMultMatrixf(world_matrix.m[0]);
+
 	float col[] = {1.0, 1.0, 1.0, 1.0};
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
 
@@ -51,6 +60,8 @@ void Penguin::draw()
 	glEnable(GL_TEXTURE_2D);
 	mesh->draw();
 	bind_texture(0);
+
+	glPopMatrix();
 }
 
 Floater *Penguin::find_next_hop()

@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 #include "gmath/gmath.h"
 
-extern Mat4 view_matrix, proj_matrix;
+extern Mat4 world_matrix, view_matrix, proj_matrix;
 extern bool keystate[256];
 #endif
 

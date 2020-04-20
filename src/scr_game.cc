@@ -3,6 +3,7 @@
 #include "scr_game.h"
 #include "water.h"
 #include "mesh.h"
+#include "meshgen.h"
 #include "skybox.h"
 #include "sdr.h"
 #include "simworld.h"
@@ -14,6 +15,8 @@
 
 static bool ground_intersect(const Ray &ray, Vec3 *pt);
 static void disturb_water(const Vec3 &pt);
+static float gen_icepatch_mesh(Mesh *mesh);
+static void draw_ui();
 
 static float cam_theta, cam_phi, cam_dist;
 static Vec3 cam_targ_pos;
@@ -27,11 +30,14 @@ static Vec2 plonkpt[2];
 
 #define NUM_FLOATERS	10
 static Floater *floater[NUM_FLOATERS];
+static Mesh *ice_mesh[NUM_FLOATERS];
+static float floater_height[NUM_FLOATERS];
 static SimWorld sim;
 
 static bool pause;
 static bool wireframe;
-static int dbgplonk;
+static int show_help;
+static int dbgplonk, dbg_show_floaters;
 
 static Penguin peng;
 
@@ -61,6 +67,11 @@ bool GameScreen::init()
 		fprintf(stderr, "failed to initialize penguin\n");
 		return false;
 	}
+
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		ice_mesh[i] = new Mesh;
+		floater_height[i] = gen_icepatch_mesh(ice_mesh[i]);
+	}
 	return true;
 }
 
@@ -72,8 +83,8 @@ void GameScreen::destroy()
 
 bool GameScreen::start()
 {
-	cam_theta = 0;
-	cam_phi = 25;
+	cam_theta = 180;
+	cam_phi = 20;
 	cam_dist = 8;
 	cam_targ_pos = Vec3(0, 1, 0);
 	cam_right_dir = Vec3(1, 0, 0);
@@ -85,9 +96,11 @@ bool GameScreen::start()
 	for(int i=0; i<NUM_FLOATERS; i++) {
 		float pos[2] = {0, 0};
 
-		calc_sample_pos_rec(i, WATER_SIZE, WATER_SIZE, pos);
+		if(i > 0) {
+			calc_sample_pos_rec(i, WATER_SIZE, WATER_SIZE, pos);
+		}
 
-		floater[i] = new Floater(Vec3(pos[0], 10.0, pos[1]), 1.5);
+		floater[i] = new Floater(Vec3(pos[0], 10.0, pos[1]), 3);
 		floater[i]->add_to_world(&sim);
 	}
 	sim.set_bounds(-WATER_SIZE / 2.0, WATER_SIZE / 2.0, -WATER_SIZE / 2.0, WATER_SIZE / 2.0);
@@ -99,13 +112,24 @@ bool GameScreen::start()
 	}
 	printf("sim stabilization preroll: %ld msec\n", game_timer() - t0);
 
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		floater[i]->calc_xform();
+		if(floater[i]->is_flipped()) {
+			floater[i]->flip();
+		}
+	}
+
 	peng.reset();
+	peng.parent = floater[0];
 
 	return true;
 }
 
 void GameScreen::stop()
 {
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		delete floater[i];
+	}
 }
 
 void GameScreen::update(float dt)
@@ -180,11 +204,26 @@ void GameScreen::draw()
 	draw_water();
 
 	for(int i=0; i<NUM_FLOATERS; i++) {
-		floater[i]->draw();
+		glPushMatrix();
+		floater[i]->calc_xform();
+		glMultMatrixf(floater[i]->xform.m[0]);
+
+		if(dbg_show_floaters) {
+			floater[i]->draw();
+		} else {
+			ice_mesh[i]->draw();
+		}
+
+		glPopMatrix();
 	}
-	sim.draw_particles();
+
+	if(dbg_show_floaters) {
+		sim.draw_particles();
+	}
 
 	peng.draw();
+
+	draw_ui();
 }
 
 void GameScreen::key(int key, bool press)
@@ -192,7 +231,11 @@ void GameScreen::key(int key, bool press)
 	if(press) {
 		switch(key) {
 		case 27:
-			pop_screen();
+			if(show_help) {
+				show_help = 0;
+			} else {
+				pop_screen();
+			}
 			break;
 
 		case 'W':
@@ -205,7 +248,11 @@ void GameScreen::key(int key, bool press)
 			break;
 
 		case KEY_F1:
-			dbgplonk ^= 1;
+			show_help ^= 1;
+			break;
+
+		case KEY_F2:
+			dbg_show_floaters ^= 1;
 			break;
 
 		default:
@@ -243,7 +290,21 @@ void GameScreen::mmotion(int x, int y)
 	if((dx | dy) == 0) return;
 
 	if(game_modkeys()) {
+		if(bnstate[2]) {
+			cam_dist += dy * 0.1f;
+			if(cam_dist < 0) cam_dist = 0;
+		}
+	} else {
 		if(bnstate[0]) {
+			float nx = (float)x / (float)win_width;
+			float ny = (float)(win_height - y) / (float)win_height;
+			Ray pr = mouse_pick_ray(nx, ny, view_matrix, proj_matrix);
+			Vec3 p;
+			if(ground_intersect(pr, &p)) {
+				disturb_water(p);
+			}
+		}
+		if(bnstate[2]) {
 			cam_theta += dx * 0.5f;
 			cam_phi += dy * 0.5f;
 			if(cam_phi < -90) cam_phi = 90;
@@ -257,21 +318,79 @@ void GameScreen::mmotion(int x, int y)
 			cam_targ_pos -= cam_right_dir * dx * 0.025f;
 			cam_targ_pos -= cam_fwd_dir * dy * 0.025f;
 		}
-		if(bnstate[2]) {
-			cam_dist += dy * 0.1f;
-			if(cam_dist < 0) cam_dist = 0;
-		}
-	} else {
-		float nx = (float)x / (float)win_width;
-		float ny = (float)(win_height - y) / (float)win_height;
-		Ray pr = mouse_pick_ray(nx, ny, view_matrix, proj_matrix);
-		Vec3 p;
-		if(ground_intersect(pr, &p)) {
-			disturb_water(p);
-		}
 	}
 }
 
+static const char *helpstr[] = {
+	"Keep the penguin alive!",
+	"Try to push floating ice chunks into the penguin's path to safety",
+	"Make waves by dragging the mouse with the left button pressed",
+	"Rotate the view with the right mouse button",
+	"Move around with the middle mouse button or WASD",
+	0
+};
+static const char *pressf1_str = "Press F1 for help";
+
+static void draw_ui()
+{
+	static const float textcol[][3] = {{0, 0, 0}, {0.2, 0.5, 1}};
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-win_width / 2, win_width / 2, -win_height / 2, win_height / 2, -1, 1);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glPushAttrib(GL_ENABLE_BIT);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	float line_height = dtx_line_height();
+	float soffs = win_height * 0.002;
+	if(soffs < 1) soffs = 1.0f;
+
+	glColor3f(0, 0, 0);
+	for(int j=0; j<2; j++) {
+		glPushMatrix();
+		if(!show_help) {
+			glTranslatef(-dtx_string_width(pressf1_str) / 2, win_height / 2 - line_height * 1.2 + soffs, 0);
+			glColor3fv(textcol[j]);
+			dtx_string(pressf1_str);
+		} else {
+			glTranslatef(0, win_height / 4, 0);
+
+			float y = line_height * 1.8;
+			float height = line_height * (sizeof helpstr / sizeof *helpstr + 1);
+			glBegin(GL_QUADS);
+			glColor4f(0, 0, 0, 0.8);
+			glVertex2f(-win_width / 2, y);
+			glVertex2f(-win_width / 2, y - height);
+			glVertex2f(win_width / 2, y - height);
+			glVertex2f(win_width / 2, y);
+			glEnd();
+
+			glColor3fv(textcol[j]);
+			for(int i=0; helpstr[i]; i++) {
+				float w = dtx_string_width(helpstr[i]);
+				glPushMatrix();
+				glTranslatef(-w / 2, -line_height * i, 0);
+				dtx_string(helpstr[i]);
+				glPopMatrix();
+			}
+		}
+		glPopMatrix();
+		dtx_flush();
+
+		glTranslatef(-soffs, soffs, 0);
+	}
+
+	glPopAttrib();
+
+}
 
 static bool ground_intersect(const Ray &ray, Vec3 *pt)
 {
@@ -295,4 +414,55 @@ static void disturb_water(const Vec3 &pt)
 		plonkidx = 1;
 	}
 	plonkpt[plonkidx] = Vec2(pt.x, pt.z);
+}
+
+static float gen_icepatch_mesh(Mesh *mesh)
+{
+	float cheight = 0.0f;
+	float sz = 5.0f;
+	gen_plane(mesh, sz, sz, 16, 16);
+
+	Vec3 offs;
+	offs.x = (float)rand() / (float)RAND_MAX * 128.0f;
+	offs.y = (float)rand() / (float)RAND_MAX * 128.0f;
+	offs.z = (float)rand() / (float)RAND_MAX * 128.0f;
+
+	Mat4 xform;
+	xform.rotation(deg_to_rad(-90), 1, 0, 0);
+	mesh->apply_xform(xform);
+
+	Vec3 *vptr = (Vec3*)mesh->get_attrib_data(MESH_ATTR_VERTEX);
+	int nverts = mesh->get_attrib_count(MESH_ATTR_VERTEX);
+
+	for(int i=0; i<nverts; i++) {
+		float theta = atan2(vptr->z, vptr->x) + M_PI;
+		float u = theta / (2.0 * M_PI);
+		float qa = fmod(theta, M_PI / 2.0);
+		float s = fabs(std::max(cos(qa), sin(qa)));
+
+		Vec3 vpos = *vptr;
+		vpos.x *= s;
+		vpos.z *= s;
+
+		float r = sqrt(vpos.x * vpos.x + vpos.z * vpos.z);
+
+		if(r >= sz / 2.0f - 1e-5) {
+			vpos.y -= 2.0f;
+		} else {
+			vpos.y += noise((offs.x + vpos.x) * 0.8, (offs.z + vpos.z) * 0.8) * 0.5 - r * r  * 0.09;
+		}
+
+		s = 1.0f + fbm((offs.y + u) * 10.0f, 2) * 0.5;
+		vpos.x *= s;
+		vpos.z *= s;
+
+		if(r <= 1e-5) {
+			cheight = vpos.y;
+		}
+
+		*vptr++ = vpos;
+	}
+
+	mesh->calc_face_normals();
+	return cheight;
 }

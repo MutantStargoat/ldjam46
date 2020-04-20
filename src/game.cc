@@ -4,7 +4,7 @@
 #include "mesh.h"
 #include "sdr.h"
 
-Mat4 view_matrix, proj_matrix;
+Mat4 world_matrix, view_matrix, proj_matrix;
 
 int win_width, win_height;
 float win_aspect;

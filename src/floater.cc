@@ -6,9 +6,6 @@
 
 #define CONSTR_ITER	8
 
-Mesh *Floater::mesh = 0;
-unsigned int Floater::sdr = 0;
-
 
 Floater::Floater(const Vec3 &pos, float sz)
 {
@@ -26,7 +23,7 @@ Floater::Floater(const Vec3 &pos, float sz)
 
 	for(int i=0; i<NUM_FLOATER_PARTICLES; i++) {
 		part[i].set_position(pos + ppos[i] * sz * 0.5);
-		part[i].set_radius(sz * 0.7);
+		part[i].set_radius(sz * 1.2);
 	}
 
 	for(int i=0; i<NUM_FLOATER_PARTICLES; i++) {
@@ -81,67 +78,57 @@ void Floater::constraint()
 	}
 }
 
-#define VLEN	1.0f
-void Floater::draw() const
+bool Floater::is_flipped() const
+{
+	return xform[1][1] < 0.0f;
+}
+
+void Floater::flip()
+{
+	Particle p = part[0];
+	part[0] = part[3];
+	part[3] = p;
+	p = part[1];
+	part[1] = part[2];
+	part[2] = p;
+}
+
+void Floater::calc_xform()
 {
 	Vec3 p0 = part[0].get_position();
 	Vec3 p1 = part[1].get_position();
 	Vec3 p2 = part[2].get_position();
 	Vec3 p3 = part[3].get_position();
+	Vec3 org = (p0 + p1 + p2 + p3) / 4.0f;
 
 	Vec3 vec_i = normalize(p1 - p0);
 	Vec3 vec_k = normalize(p3 - p0);
 	Vec3 vec_j = normalize(cross(vec_k, vec_i));
 	vec_k = cross(vec_i, vec_j);
 
-	/*
-	Matrix4x4 rot_matrix;
-	rot_matrix.set_column_vector(vec_i, 0);
-	rot_matrix.set_column_vector(vec_j, 1);
-	rot_matrix.set_column_vector(vec_k, 2);
-	rot_matrix.set_row_vector(Vec4(0, 0, 0, 1), 3);
+	xform = Mat4(vec_i, vec_j, vec_k);
+	xform.translate(org.x, org.y - 0.3, org.z);
+}
 
-	Matrix4x4 xform;
-	xform.translate((p0 + p1 + p2 + p3) / 4.0);
-	xform *= rot_matrix;
-	xform.scale(Vec3(size / 2.0, size / 2.0, size / 2.0));
-	*/
-
+#define VLEN	1.0f
+void Floater::draw() const
+{
 	glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
 	glDisable(GL_LIGHTING);
 
 	glLineWidth(2);
 
-	Vec3 org = (p0 + p1 + p2 + p3) / 4.0f;
-
 	glBegin(GL_LINES);
 	glColor3f(1, 0, 0);
-	glVertex3f(org.x, org.y, org.z);
-	glVertex3f(org.x + vec_i.x * VLEN, p0.y + vec_i.y * VLEN, org.z + vec_i.z * VLEN);
+	glVertex3f(0, 0, 0);
+	glVertex3f(VLEN, 0, 0);
 	glColor3f(0, 1, 0);
-	glVertex3f(org.x, org.y, org.z);
-	glVertex3f(org.x + vec_j.x * VLEN, p0.y + vec_j.y * VLEN, org.z + vec_j.z * VLEN);
+	glVertex3f(0, 0, 0);
+	glVertex3f(0, VLEN, 0);
 	glColor3f(0, 0, 1);
-	glVertex3f(org.x, org.y, org.z);
-	glVertex3f(org.x + vec_k.x * VLEN, p0.y + vec_k.y * VLEN, org.z + vec_k.z * VLEN);
+	glVertex3f(0, 0, 0);
+	glVertex3f(0, 0, VLEN);
 	glEnd();
 
 	glPopAttrib();
-
-#if 0
-	boattex->bind(0);
-	bind_program(sdr);
-
-	/*float view_matrix[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, view_matrix);
-	set_uniform_matrix4_transposed(sdr, "view_matrix_trans", view_matrix);*/
-
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glMultTransposeMatrixf(xform[0]);
-	mesh->draw();
-	glPopMatrix();
-
-	bind_program(0);
-#endif
 }

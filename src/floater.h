@@ -5,7 +5,6 @@
 #include "gmath/gmath.h"
 #include "particle.h"
 #include "constr.h"
-#include "mesh.h"
 
 #define NUM_FLOATER_PARTICLES	4
 
@@ -17,15 +16,19 @@ private:
 	Particle part[NUM_FLOATER_PARTICLES];
 	std::vector<Constraint*> constr;
 
-	static Mesh *mesh;
-	static unsigned int sdr;
-
 public:
+	Mat4 xform;
+
 	Floater(const Vec3 &pos, float sz);
 
 	void add_to_world(SimWorld *world);
 
 	void constraint();
+
+	bool is_flipped() const;
+	void flip();
+
+	void calc_xform();
 	void draw() const;
 };
 
