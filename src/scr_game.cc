@@ -31,6 +31,7 @@ static Mesh *pengmesh;
 
 static bool pause;
 static bool wireframe;
+static int dbgplonk;
 
 
 GameScreen::GameScreen()
@@ -78,7 +79,7 @@ bool GameScreen::start()
 
 		calc_sample_pos_rec(i, WATER_SIZE, WATER_SIZE, pos);
 
-		floater[i] = new Floater(Vec3(pos[0], 0.5, pos[1]), 1.5);
+		floater[i] = new Floater(Vec3(pos[0], 0.1, pos[1]), 1.5);
 		floater[i]->add_to_world(&sim);
 	}
 	sim.set_bounds(-WATER_SIZE / 2.0, WATER_SIZE / 2.0, -WATER_SIZE / 2.0, WATER_SIZE / 2.0);
@@ -110,7 +111,7 @@ void GameScreen::update(float dt)
 		for(int i=0; i<num_plonks; i++) {
 			Vec2 pt = lerp(plonkpt[0], plonkpt[1], (float)i / (float)(num_plonks - 1));
 			//plonk_gauss(pt.x, pt.y, 0.05 * dt / (float)num_plonks, 0.2);
-			plonk_gauss(pt.x, pt.y, 0.05 * dt / (float)num_plonks, 0.085);
+			plonk_gauss(pt.x, pt.y, (dbgplonk ? 0.1 : 0.05) * dt / (float)num_plonks, 0.085);
 		}
 
 		// reset the plonk index so that we'll start a new user interaction on click
@@ -164,6 +165,10 @@ void GameScreen::key(int key, bool press)
 
 		case ' ':
 			pause = !pause;
+			break;
+
+		case KEY_F1:
+			dbgplonk ^= 1;
 			break;
 
 		default:

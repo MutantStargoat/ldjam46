@@ -12,6 +12,7 @@ static void keyup(unsigned char key, int x, int y);
 static void skeydown(int key, int x, int y);
 static void skeyup(int key, int x, int y);
 static void mouse(int bn, int st, int x, int y);
+static int translate_special(int skey);
 
 static int fullscr;
 static unsigned int modkeys;
@@ -124,17 +125,50 @@ static void keyup(unsigned char key, int x, int y)
 
 static void skeydown(int key, int x, int y)
 {
-	/* TODO */
 	modkeys = glutGetModifiers();
+	if((key = translate_special(key))) {
+		game_keyboard(key, 1);
+	}
 }
 
 static void skeyup(int key, int x, int y)
 {
-	/* TODO */
+	if((key = translate_special(key))) {
+		game_keyboard(key, 0);
+	}
 }
 
 static void mouse(int bn, int st, int x, int y)
 {
 	modkeys = glutGetModifiers();
 	game_mbutton(bn - GLUT_LEFT_BUTTON, st == GLUT_DOWN, x, y);
+}
+
+static int translate_special(int skey)
+{
+	switch(skey) {
+	case GLUT_KEY_DELETE:
+		return 127;
+	case GLUT_KEY_LEFT:
+		return KEY_LEFT;
+	case GLUT_KEY_RIGHT:
+		return KEY_RIGHT;
+	case GLUT_KEY_UP:
+		return KEY_UP;
+	case GLUT_KEY_DOWN:
+		return KEY_DOWN;
+	case GLUT_KEY_PAGE_UP:
+		return KEY_PGUP;
+	case GLUT_KEY_PAGE_DOWN:
+		return KEY_PGDOWN;
+	case GLUT_KEY_HOME:
+		return KEY_HOME;
+	case GLUT_KEY_END:
+		return KEY_END;
+	default:
+		if(skey >= GLUT_KEY_F1 && skey <= GLUT_KEY_F12) {
+			return KEY_F1 + skey - GLUT_KEY_F1;
+		}
+	}
+	return 0;
 }
