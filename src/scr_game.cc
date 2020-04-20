@@ -1,3 +1,5 @@
+#include <float.h>
+#include <algorithm>
 #include "opengl.h"
 #include "game.h"
 #include "scr_game.h"
@@ -13,10 +15,15 @@
 
 #define WATER_SIZE	100.0f
 
+#define SQ(x)	((x) * (x))
+#define MAX_EXCITE_DIST_SQ	SQ(15.0f)
+#define MAX_HOP_DIST_SQ		SQ(9.0f)
+
+static void draw_ui();
 static bool ground_intersect(const Ray &ray, Vec3 *pt);
 static void disturb_water(const Vec3 &pt);
 static float gen_icepatch_mesh(Mesh *mesh);
-static void draw_ui();
+static Floater *find_nearest_floater(const Vec3 &p, Floater *ignore);
 
 static float cam_theta, cam_phi, cam_dist;
 static Vec3 cam_targ_pos;
@@ -38,6 +45,7 @@ static bool pause;
 static bool wireframe;
 static int show_help;
 static int dbgplonk, dbg_show_floaters;
+static bool dbgjump;
 
 static Penguin peng;
 
@@ -87,8 +95,8 @@ bool GameScreen::start()
 	cam_phi = 20;
 	cam_dist = 8;
 	cam_targ_pos = Vec3(0, 1, 0);
-	cam_right_dir = Vec3(1, 0, 0);
-	cam_fwd_dir = Vec3(0, 0, 1);
+	cam_right_dir = Vec3(-1, 0, 0);
+	cam_fwd_dir = Vec3(0, 0, -1);
 
 	// reset water TODO
 	sim.reset();
@@ -181,6 +189,29 @@ void GameScreen::update(float dt)
 	// satisfy the constraints for each floater
 	for(int i=0; i<NUM_FLOATERS; i++) {
 		floater[i]->constraint();
+		floater[i]->calc_xform();
+	}
+
+	// see if we have nearby floaters to jump towards
+	if(peng.parent) {
+		if(peng.prev) {
+			if(distance_sq(peng.prev->pos, peng.parent->pos) > MAX_EXCITE_DIST_SQ) {
+				peng.prev = 0;
+			}
+		}
+
+		Floater *nearest = find_nearest_floater(peng.parent->pos, peng.prev);
+		if(nearest) {
+			float dsq = distance_sq(peng.parent->pos, nearest->pos);
+			if(dsq < MAX_EXCITE_DIST_SQ) {
+				peng.restless = 1.0f - (dsq / MAX_EXCITE_DIST_SQ);
+				peng.target(nearest);
+			}
+			if(dsq < MAX_HOP_DIST_SQ || dbgjump) {
+				peng.hop(nearest);
+				dbgjump = false;
+			}
+		}
 	}
 
 	peng.update(dt);
@@ -253,6 +284,14 @@ void GameScreen::key(int key, bool press)
 
 		case KEY_F2:
 			dbg_show_floaters ^= 1;
+			break;
+
+		case KEY_F3:
+			dbgplonk ^= 1;
+			break;
+
+		case '`':
+			dbgjump = true;
 			break;
 
 		default:
@@ -465,4 +504,21 @@ static float gen_icepatch_mesh(Mesh *mesh)
 
 	mesh->calc_face_normals();
 	return cheight;
+}
+
+static Floater *find_nearest_floater(const Vec3 &p, Floater *ignore)
+{
+	Floater *best = 0;
+	float best_dsq = FLT_MAX;
+
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		if(floater[i] == peng.parent || floater[i] == ignore) continue;
+
+		float dsq = distance_sq(p, floater[i]->pos);
+		if(dsq < best_dsq) {
+			best = floater[i];
+			best_dsq = dsq;
+		}
+	}
+	return best;
 }

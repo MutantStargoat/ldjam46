@@ -1,12 +1,20 @@
 #ifndef PENGUIN_H_
 #define PENGUIN_H_
 
+#include "gmath/gmath.h"
+
 class Floater;
 
 class Penguin {
 public:
 	Vec3 pos;
-	Floater *parent;
+	float angle;
+	Mat4 xform;
+
+	float hop_t;
+
+	Floater *parent, *next, *prev;
+	float restless;
 
 	bool init();
 	void destroy();
@@ -16,7 +24,7 @@ public:
 	void update(float dt);
 	void draw();
 
-	Floater *find_next_hop();
+	void target(Floater *to);
 	void hop(Floater *to);
 };
 

@@ -17,6 +17,7 @@ private:
 	std::vector<Constraint*> constr;
 
 public:
+	Vec3 pos;
 	Mat4 xform;
 
 	Floater(const Vec3 &pos, float sz);

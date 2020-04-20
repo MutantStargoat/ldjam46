@@ -99,7 +99,7 @@ void Floater::calc_xform()
 	Vec3 p1 = part[1].get_position();
 	Vec3 p2 = part[2].get_position();
 	Vec3 p3 = part[3].get_position();
-	Vec3 org = (p0 + p1 + p2 + p3) / 4.0f;
+	pos = (p0 + p1 + p2 + p3) / 4.0f;
 
 	Vec3 vec_i = normalize(p1 - p0);
 	Vec3 vec_k = normalize(p3 - p0);
@@ -107,7 +107,7 @@ void Floater::calc_xform()
 	vec_k = cross(vec_i, vec_j);
 
 	xform = Mat4(vec_i, vec_j, vec_k);
-	xform.translate(org.x, org.y - 0.3, org.z);
+	xform.translate(pos.x, pos.y - 0.3, pos.z);
 }
 
 #define VLEN	1.0f
