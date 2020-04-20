@@ -1,8 +1,10 @@
 #include "simworld.h"
 #include "water.h"
 
-#define AIR_FRICTION	0.01
-#define WATER_FRICTION	0.01
+#define AIR_FRICTION	0.001f
+#define WATER_FRICTION	0.001f
+#define BUOYANCY		60.0f
+#define WAVE_PUSH		900.0f
 
 SimWorld::SimWorld()
 {
@@ -94,11 +96,11 @@ void SimWorld::step(float dt)
 		float bforce = 0.0;
 		if(dy > 0.0) {
 			float depth = dy < rad ? dy : rad;
-			bforce = depth * depth * 60.0;
+			bforce = depth * depth * BUOYANCY;
 		}
 
 		Vec3 norm = get_water_normal(pos.x, pos.z);
-		part[i]->add_force(Vec3(norm.x * 240, bforce, norm.z * 240));
+		part[i]->add_force(Vec3(norm.x * WAVE_PUSH, bforce, norm.z * WAVE_PUSH));
 
 		part[i]->set_friction(dy <= 0.0 ? AIR_FRICTION : WATER_FRICTION);
 		part[i]->step(this, dt);
@@ -126,7 +128,7 @@ void SimWorld::step(float dt)
 		Vec3 npos = part[i]->get_position();
 		// if pos and npos are on either side of the water level we have a crossing
 		if((pos.y - (water_level + rad)) * (npos.y - (water_level + rad)) < 0.0) {
-			plonk_gauss(pos.x, pos.z, vel.y * dt * 0.02, 0.1);
+			plonk_gauss(pos.x, pos.z, vel.y * dt * 0.005, 0.05);
 		}
 	}
 }

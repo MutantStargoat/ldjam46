@@ -140,8 +140,7 @@ void Particle::draw() const
 	glTranslatef(pos.x, pos.y, pos.z);
 
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, color);
-
-	//glutSolidSphere(rad, 16, 8);
+	glutSolidSphere(rad * 0.2, 16, 8);
 
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_DEPTH_TEST);

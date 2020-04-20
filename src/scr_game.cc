@@ -93,6 +93,13 @@ bool GameScreen::start()
 	}
 	sim.set_bounds(-WATER_SIZE / 2.0, WATER_SIZE / 2.0, -WATER_SIZE / 2.0, WATER_SIZE / 2.0);
 
+	// run a few simulation cycles to let the world stabilize
+	long t0 = game_timer();
+	for(int i=0; i<2048; i++) {
+		update(1.0f / 120.0f);
+	}
+	printf("sim stabilization preroll: %ld msec\n", game_timer() - t0);
+
 	return true;
 }
 
@@ -172,7 +179,9 @@ void GameScreen::draw()
 	for(int i=0; i<NUM_FLOATERS; i++) {
 		floater[i]->draw();
 	}
+	sim.draw_particles();
 
+	glColor3f(1, 1, 1);
 	pengmesh->draw();
 }
 

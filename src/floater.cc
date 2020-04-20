@@ -81,11 +81,12 @@ void Floater::constraint()
 	}
 }
 
+#define VLEN	1.0f
 void Floater::draw() const
 {
 	Vec3 p0 = part[0].get_position();
 	Vec3 p1 = part[1].get_position();
-	//Vec3 p2 = part[2].get_position();
+	Vec3 p2 = part[2].get_position();
 	Vec3 p3 = part[3].get_position();
 
 	Vec3 vec_i = normalize(p1 - p0);
@@ -109,18 +110,20 @@ void Floater::draw() const
 	glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
 	glDisable(GL_LIGHTING);
 
-	glLineWidth(5);
+	glLineWidth(2);
+
+	Vec3 org = (p0 + p1 + p2 + p3) / 4.0f;
 
 	glBegin(GL_LINES);
 	glColor3f(1, 0, 0);
-	glVertex3f(p0.x, p0.y, p0.z);
-	glVertex3f(p0.x + vec_i.x * 3, p0.y + vec_i.y * 3, p0.z + vec_i.z * 3);
+	glVertex3f(org.x, org.y, org.z);
+	glVertex3f(org.x + vec_i.x * VLEN, p0.y + vec_i.y * VLEN, org.z + vec_i.z * VLEN);
 	glColor3f(0, 1, 0);
-	glVertex3f(p0.x, p0.y, p0.z);
-	glVertex3f(p0.x + vec_j.x * 3, p0.y + vec_j.y * 3, p0.z + vec_j.z * 3);
+	glVertex3f(org.x, org.y, org.z);
+	glVertex3f(org.x + vec_j.x * VLEN, p0.y + vec_j.y * VLEN, org.z + vec_j.z * VLEN);
 	glColor3f(0, 0, 1);
-	glVertex3f(p0.x, p0.y, p0.z);
-	glVertex3f(p0.x + vec_k.x * 3, p0.y + vec_k.y * 3, p0.z + vec_k.z * 3);
+	glVertex3f(org.x, org.y, org.z);
+	glVertex3f(org.x + vec_k.x * VLEN, p0.y + vec_k.y * VLEN, org.z + vec_k.z * VLEN);
 	glEnd();
 
 	glPopAttrib();

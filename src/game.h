@@ -67,6 +67,7 @@ void game_mbutton(int bn, int press, int x, int y);
 void game_mmotion(int x, int y);
 
 /* implemented in main.c */
+long game_timer(void);
 void game_quit(void);
 void game_fullscreen(int fs);
 void game_toggle_fullscreen(void);

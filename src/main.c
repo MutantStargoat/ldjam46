@@ -16,6 +16,7 @@ static int translate_special(int skey);
 
 static int fullscr;
 static unsigned int modkeys;
+static long start_time;
 
 int main(int argc, char **argv)
 {
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
 		game_fullscreen(1);
 	}
 
+	start_time = game_timer();
 	if(game_init(argc, argv) == -1) {
 		return 1;
 	}
@@ -58,6 +60,11 @@ int main(int argc, char **argv)
 
 	glutMainLoop();
 	return 0;
+}
+
+long game_timer(void)
+{
+	return glutGet(GLUT_ELAPSED_TIME) - start_time;
 }
 
 void game_quit(void)
@@ -91,7 +98,7 @@ unsigned int game_modkeys(void)
 
 static void display(void)
 {
-	time_msec = glutGet(GLUT_ELAPSED_TIME);
+	time_msec = game_timer();
 
 	game_draw();
 
