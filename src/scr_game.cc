@@ -3,11 +3,11 @@
 #include "scr_game.h"
 #include "water.h"
 #include "mesh.h"
-#include "scene_file.h"
 #include "skybox.h"
 #include "sdr.h"
 #include "simworld.h"
 #include "floater.h"
+#include "penguin.h"
 #include "util.h"
 
 #define WATER_SIZE	100.0f
@@ -29,11 +29,11 @@ static Vec2 plonkpt[2];
 static Floater *floater[NUM_FLOATERS];
 static SimWorld sim;
 
-static Mesh *pengmesh;
-
 static bool pause;
 static bool wireframe;
 static int dbgplonk;
+
+static Penguin peng;
 
 
 GameScreen::GameScreen()
@@ -57,17 +57,16 @@ bool GameScreen::init()
 		return false;
 	}
 
-	SceneFile scn;
-	if(!(scn.load("data/penguin.obj")) || scn.meshes.empty()) {
+	if(!peng.init()) {
+		fprintf(stderr, "failed to initialize penguin\n");
 		return false;
 	}
-	pengmesh = scn.meshes[0];
 	return true;
 }
 
 void GameScreen::destroy()
 {
-	delete pengmesh;
+	peng.destroy();
 	destroy_water();
 }
 
@@ -99,6 +98,8 @@ bool GameScreen::start()
 		update(1.0f / 120.0f);
 	}
 	printf("sim stabilization preroll: %ld msec\n", game_timer() - t0);
+
+	peng.reset();
 
 	return true;
 }
@@ -157,6 +158,8 @@ void GameScreen::update(float dt)
 	for(int i=0; i<NUM_FLOATERS; i++) {
 		floater[i]->constraint();
 	}
+
+	peng.update(dt);
 }
 
 void GameScreen::draw()
@@ -181,9 +184,7 @@ void GameScreen::draw()
 	}
 	sim.draw_particles();
 
-	float col[] = {0.8, 0.8, 0.8, 0.8};
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
-	pengmesh->draw();
+	peng.draw();
 }
 
 void GameScreen::key(int key, bool press)

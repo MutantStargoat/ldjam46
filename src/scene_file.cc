@@ -8,7 +8,8 @@
 static Mesh *load_mesh(const aiMesh *ai_mesh);
 
 #define ASSFLAGS (aiProcess_Triangulate | aiProcess_GenSmoothNormals | \
-		aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices)
+		aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | \
+		aiProcess_FlipUVs)
 
 bool SceneFile::load(const char *fname)
 {
