@@ -2,6 +2,7 @@
 #include "game.h"
 #include "screen.h"
 #include "mesh.h"
+#include "sdr.h"
 
 Mat4 view_matrix, proj_matrix;
 
@@ -21,6 +22,25 @@ int game_init(int argc, char **argv)
 	if(opengl_init() == -1) {
 		return -1;
 	}
+
+	if(GLEW_ARB_framebuffer_sRGB || GLEW_EXT_framebuffer_sRGB) {
+		if(opt.srgb) {
+			int srgb_capable;
+			glGetIntegerv(GL_FRAMEBUFFER_SRGB_CAPABLE_EXT, &srgb_capable);
+			printf("Framebuffer %s sRGB-capable\n", srgb_capable ? "is" : "is not");
+			if(srgb_capable) {
+				glEnable(GL_FRAMEBUFFER_SRGB);
+			} else {
+				opt.srgb = 0;
+			}
+		}
+	} else {
+		opt.srgb = 0;
+	}
+	if(!opt.srgb) {
+		add_shader_header(GL_FRAGMENT_SHADER, "#define FB_NOT_SRGB");
+	}
+
 
 	if(!(tpool = tpool_create(0))) {
 		fprintf(stderr, "failed to create thread pool\n");
@@ -42,19 +62,6 @@ int game_init(int argc, char **argv)
 		return -1;
 	}
 	push_screen(start_scr);
-
-	if(GLEW_ARB_framebuffer_sRGB || GLEW_EXT_framebuffer_sRGB) {
-		if(opt.srgb) {
-			int srgb_capable;
-			glGetIntegerv(GL_FRAMEBUFFER_SRGB_CAPABLE_EXT, &srgb_capable);
-			printf("Framebuffer %s sRGB-capable\n", srgb_capable ? "is" : "is not");
-			if(srgb_capable) {
-				glEnable(GL_FRAMEBUFFER_SRGB);
-			} else {
-				opt.srgb = 0;
-			}
-		}
-	}
 
 	Mesh::use_custom_sdr_attr = false;
 

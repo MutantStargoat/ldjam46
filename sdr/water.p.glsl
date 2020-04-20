@@ -32,6 +32,12 @@ void main()
 
 	vec3 color = mix(depthcol, refl_col, fr);
 
-	gl_FragColor.xyz = mix(color, env_color, envblend);
+	vec3 out_color = mix(color, env_color, envblend);
+
+#ifdef FB_NOT_SRGB
+	gl_FragColor.xyz = pow(out_color, vec3(1.0 / 2.2));
+#else
+	gl_FragColor.xyz = out_color;
+#endif
 	gl_FragColor.w = 1.0;
 }
