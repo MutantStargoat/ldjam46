@@ -6,6 +6,11 @@
 #include "scene_file.h"
 #include "skybox.h"
 #include "sdr.h"
+#include "simworld.h"
+#include "floater.h"
+#include "util.h"
+
+#define WATER_SIZE	100.0f
 
 static bool ground_intersect(const Ray &ray, Vec3 *pt);
 static void disturb_water(const Vec3 &pt);
@@ -17,6 +22,10 @@ static bool bnstate[8];
 // start-end point of user interaction with the water during the frame
 static int plonkidx = -1;
 static Vec2 plonkpt[2];
+
+#define NUM_FLOATERS	10
+static Floater *floater[NUM_FLOATERS];
+static SimWorld sim;
 
 static Mesh *pengmesh;
 
@@ -35,7 +44,7 @@ GameScreen::~GameScreen()
 
 bool GameScreen::init()
 {
-	if(!init_water(200, 200, 100.0f)) {
+	if(!init_water(200, 200, WATER_SIZE)) {
 		fprintf(stderr, "failed to initialize water sim\n");
 		return false;
 	}
@@ -62,6 +71,18 @@ void GameScreen::destroy()
 bool GameScreen::start()
 {
 	// reset water TODO
+	sim.reset();
+
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		float pos[2] = {0, 0};
+
+		calc_sample_pos_rec(i, WATER_SIZE, WATER_SIZE, pos);
+
+		floater[i] = new Floater(Vec3(pos[0], 0.5, pos[1]), 1.5);
+		floater[i]->add_to_world(&sim);
+	}
+	sim.set_bounds(-WATER_SIZE / 2.0, WATER_SIZE / 2.0, -WATER_SIZE / 2.0, WATER_SIZE / 2.0);
+
 	return true;
 }
 
@@ -97,6 +118,12 @@ void GameScreen::update(float dt)
 	}
 
 	sim_water(dt);
+	sim.step(dt);
+
+	// satisfy the constraints for each floater
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		floater[i]->constraint();
+	}
 }
 
 void GameScreen::draw()
@@ -114,6 +141,11 @@ void GameScreen::draw()
 
 	draw_skybox();
 	draw_water();
+
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		floater[i]->draw();
+	}
+
 	pengmesh->draw();
 }
 
