@@ -181,7 +181,8 @@ void GameScreen::draw()
 	}
 	sim.draw_particles();
 
-	glColor3f(1, 1, 1);
+	float col[] = {0.8, 0.8, 0.8, 0.8};
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
 	pengmesh->draw();
 }
 
