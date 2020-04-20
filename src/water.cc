@@ -12,6 +12,8 @@
 #define VERTS_PER_SAMPLE	1
 #define SURF_CUBIC
 
+#define EXT_RAD		(water_rad * 4.0f)
+
 struct MeshJob {
 	float du, dv;
 	float v;
@@ -35,9 +37,13 @@ static unsigned int sdr;
 static Mesh *mesh;
 static MeshJob *jobs;
 
+static float water_rad;
+
 
 bool init_water(int width, int height, float size)
 {
+	water_rad = size * 0.5f;
+
 	xsz = width;
 	ysz = height;
 	scale = size;
@@ -65,8 +71,8 @@ bool init_water(int width, int height, float size)
 	Vec2 *uvptr = (Vec2*)mesh->set_attrib_data(MESH_ATTR_TEXCOORD, 2, vsz, 0);
 	unsigned int *iptr = (unsigned int*)mesh->set_index_data(num_idx, 0);
 
-	float du = 1.0f / (float)vxsz;
-	float dv = 1.0f / (float)vysz;
+	float du = 1.0f / (float)(vxsz - 1);
+	float dv = 1.0f / (float)(vysz - 1);
 
 	jobs = new MeshJob[vysz];
 	for(int i=0; i<vysz; i++) {
@@ -111,6 +117,7 @@ bool init_water(int width, int height, float size)
 	if(!(sdr = create_program_load("sdr/water.v.glsl", "sdr/water.p.glsl"))) {
 		return false;
 	}
+	set_uniform_float(sdr, "max_view_dist", EXT_RAD);
 
 	return true;
 }
@@ -296,6 +303,14 @@ static inline float nwater(float u, float v)
 #endif
 }
 
+#define EXT_VERTEX(vx, vz) \
+	do { \
+		float zscale = flip_z ? -1.0f : 1.0f; \
+		float x = swap_xz ? (vz) * zscale : (vx); \
+		float z = swap_xz ? (vx) : (vz) * zscale; \
+		glVertex3f(x, 0, z); \
+	} while(0)
+
 void draw_water()
 {
 	/* mark the attribute arrays we're going to modify as dirty */
@@ -312,6 +327,28 @@ void draw_water()
 	bind_program(sdr);
 	bind_texture(skytex);
 	mesh->draw();
+
+	// extend the water surface with cheap polygons
+	glPushAttrib(GL_ENABLE_BIT);
+	glDisable(GL_CULL_FACE);
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);
+	for(int i=0; i<4; i++) {
+		bool flip_z = i & 1;
+		bool swap_xz = (i & 2) >> 1;
+
+		EXT_VERTEX(-water_rad, -water_rad);
+		EXT_VERTEX(0, -water_rad);
+		EXT_VERTEX(0, -EXT_RAD);
+		EXT_VERTEX(-EXT_RAD * 0.7071, -EXT_RAD * 0.7071);
+		EXT_VERTEX(0, -water_rad);
+		EXT_VERTEX(water_rad, -water_rad);
+		EXT_VERTEX(EXT_RAD * 0.7071, -EXT_RAD * 0.7071);
+		EXT_VERTEX(0, -EXT_RAD);
+	}
+	glEnd();
+	glPopAttrib();
+
 	bind_texture(0);
 	bind_program(0);
 }

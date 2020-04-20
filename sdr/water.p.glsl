@@ -1,11 +1,11 @@
 uniform samplerCube envmap;
+uniform float max_view_dist;
 
 varying vec3 vpos, vnorm, wviewdir, wnorm;
 varying float wrad;
 
-// these must match the maximum size of the field in scr_game.cc
-#define FOG_NEAR 38.0
-#define FOG_FAR 50.0
+#define FOG_NEAR (max_view_dist * 0.5)
+#define FOG_FAR max_view_dist
 
 const vec3 depthcol = vec3(0.22, 0.25, 0.3) * 0.08;
 

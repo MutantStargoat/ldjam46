@@ -9,6 +9,7 @@
 #include "gmath/gmath.h"
 
 extern Mat4 view_matrix, proj_matrix;
+extern bool keystate[256];
 #endif
 
 extern int win_width, win_height;
@@ -18,6 +19,7 @@ extern long time_msec;
 
 extern struct thread_pool *tpool;
 extern struct dtx_font *dbgfont;
+extern int dbgfont_size;
 
 enum {
 	MOD_SHIFT	= 1,

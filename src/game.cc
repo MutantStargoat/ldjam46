@@ -15,6 +15,8 @@ struct thread_pool *tpool;
 struct dtx_font *dbgfont;
 int dbgfont_size;
 
+bool keystate[256];
+
 extern "C" {
 
 int game_init(int argc, char **argv)
@@ -144,6 +146,7 @@ void game_draw(void)
 
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
+	glColor3f(0, 0, 0);
 
 	dtx_string(fpsbuf);
 	dtx_flush();
@@ -161,6 +164,10 @@ void game_reshape(int x, int y)
 
 void game_keyboard(int c, int press)
 {
+	if(c < 256) {
+		keystate[c] = press;
+	}
+
 	curscr->key(c, press);
 }
 

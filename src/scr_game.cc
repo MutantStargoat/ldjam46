@@ -15,7 +15,9 @@
 static bool ground_intersect(const Ray &ray, Vec3 *pt);
 static void disturb_water(const Vec3 &pt);
 
-static float cam_theta, cam_phi = 25, cam_dist = 8;
+static float cam_theta, cam_phi, cam_dist;
+static Vec3 cam_targ_pos;
+static Vec3 cam_right_dir, cam_fwd_dir;
 static int mouse_x, mouse_y;
 static bool bnstate[8];
 
@@ -71,6 +73,13 @@ void GameScreen::destroy()
 
 bool GameScreen::start()
 {
+	cam_theta = 0;
+	cam_phi = 25;
+	cam_dist = 8;
+	cam_targ_pos = Vec3(0, 1, 0);
+	cam_right_dir = Vec3(1, 0, 0);
+	cam_fwd_dir = Vec3(0, 0, 1);
+
 	// reset water TODO
 	sim.reset();
 
@@ -79,7 +88,7 @@ bool GameScreen::start()
 
 		calc_sample_pos_rec(i, WATER_SIZE, WATER_SIZE, pos);
 
-		floater[i] = new Floater(Vec3(pos[0], 0.1, pos[1]), 1.5);
+		floater[i] = new Floater(Vec3(pos[0], 10.0, pos[1]), 1.5);
 		floater[i]->add_to_world(&sim);
 	}
 	sim.set_bounds(-WATER_SIZE / 2.0, WATER_SIZE / 2.0, -WATER_SIZE / 2.0, WATER_SIZE / 2.0);
@@ -93,6 +102,22 @@ void GameScreen::stop()
 
 void GameScreen::update(float dt)
 {
+	// camera manipulation should work even in pause, so do it before checking pause
+	float walk_speed = 10.0f * dt;
+	if(keystate['w']) {
+		cam_targ_pos -= cam_fwd_dir * walk_speed;
+	}
+	if(keystate['s']) {
+		cam_targ_pos += cam_fwd_dir * walk_speed;
+	}
+	if(keystate['d']) {
+		cam_targ_pos += cam_right_dir * walk_speed;
+	}
+	if(keystate['a']) {
+		cam_targ_pos -= cam_right_dir * walk_speed;
+	}
+
+
 	if(pause) return;
 
 	// if we had any interaction this frame (plonkidx != -1) then add a series of plonks
@@ -136,6 +161,7 @@ void GameScreen::draw()
 	view_matrix.pre_translate(0, 0, -cam_dist);
 	view_matrix.pre_rotate(deg_to_rad(cam_phi), 1, 0, 0);
 	view_matrix.pre_rotate(deg_to_rad(cam_theta), 0, 1, 0);
+	view_matrix.pre_translate(-cam_targ_pos.x, -cam_targ_pos.y, -cam_targ_pos.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(view_matrix.m[0]);
@@ -158,7 +184,7 @@ void GameScreen::key(int key, bool press)
 			pop_screen();
 			break;
 
-		case 'w':
+		case 'W':
 			wireframe = !wireframe;
 			glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 			break;
@@ -211,6 +237,14 @@ void GameScreen::mmotion(int x, int y)
 			cam_phi += dy * 0.5f;
 			if(cam_phi < -90) cam_phi = 90;
 			if(cam_phi > 90) cam_phi = 90;
+
+			float theta = deg_to_rad(cam_theta);
+			cam_right_dir = Vec3(cos(theta), 0, sin(theta));
+			cam_fwd_dir = Vec3(-sin(theta), 0, cos(theta));
+		}
+		if(bnstate[1]) {
+			cam_targ_pos -= cam_right_dir * dx * 0.025f;
+			cam_targ_pos -= cam_fwd_dir * dy * 0.025f;
 		}
 		if(bnstate[2]) {
 			cam_dist += dy * 0.1f;
