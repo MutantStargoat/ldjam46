@@ -14,8 +14,8 @@ void calc_sample_pos_rec(int sidx, float xsz, float ysz, float *pos)
 
     if(!sidx) {
         /* we're done, just add appropriate jitter */
-        pos[0] += frand(xsz) - xsz / 2.0;
-        pos[1] += frand(ysz) - ysz / 2.0;
+        pos[0] += frand(xsz / 2.0) - xsz / 4.0;
+        pos[1] += frand(ysz / 2.0) - ysz / 4.0;
         return;
     }
 

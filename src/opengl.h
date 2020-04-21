@@ -16,6 +16,8 @@ extern "C" {
 #endif
 
 int opengl_init(void);
+void gl_mtl_diffuse(float r, float g, float b);
+void gl_mtl_specular(float r, float g, float b);
 
 #ifdef __cplusplus
 }

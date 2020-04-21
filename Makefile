@@ -6,9 +6,9 @@ csrc = $(wildcard src/*.c) \
 	   $(wildcard libs/zlib/*.c) \
 	   $(wildcard libs/libpng/*.c) \
 	   $(wildcard libs/libjpeg/*.c) \
-	   $(wildcard libs/drawtext/*.c) \
-	   $(wildcard libs/ogg/*.c) \
-	   $(wildcard libs/vorbis/*.c)
+	   $(wildcard libs/drawtext/*.c)
+#	   $(wildcard libs/ogg/*.c) \
+#	   $(wildcard libs/vorbis/*.c)
 
 obj = $(ccsrc:.cc=.o) $(csrc:.c=.o)
 dep = $(obj:.o=.d)
@@ -19,7 +19,8 @@ dbg = -g
 opt = -O3 -ffast-math
 inc = -Ilibs -Ilibs/imago -Ilibs/libpng -Ilibs/zlib -Ilibs/libjpeg \
 	  -Ilibs/ogg -Ilibs/vorbis -Ilibs/drawtext
-def = -DDEV_BUILD -DNO_FREETYPE
+def = -DNO_FREETYPE
+#-DDEV_BUILD
 
 CFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc) $(def)
 CXXFLAGS = $(warn) -MMD $(dbg) $(opt) $(inc) $(def)

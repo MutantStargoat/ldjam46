@@ -10,7 +10,7 @@
 #else
 #define DEF_FS		1
 #define DEF_VSYNC	1
-#define DEF_SSCR	"menu"
+#define DEF_SSCR	"game"
 #endif
 
 struct options opt = {

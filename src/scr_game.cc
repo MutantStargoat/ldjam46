@@ -12,6 +12,7 @@
 #include "floater.h"
 #include "penguin.h"
 #include "util.h"
+#include "tentacle.h"
 
 #define WATER_SIZE	100.0f
 
@@ -49,6 +50,13 @@ static bool dbgjump;
 
 static Penguin peng;
 
+#define NUM_TENTACLES	16
+#define TENTACLE_DEPTH	4.8f
+#define TENTACLE_CYCLE	50.0f
+static bool run_tentacles;
+static Tentacle tentacle[NUM_TENTACLES];
+static float tentacle_anm[NUM_TENTACLES];
+
 
 GameScreen::GameScreen()
 {
@@ -61,7 +69,7 @@ GameScreen::~GameScreen()
 
 bool GameScreen::init()
 {
-	if(!init_water(200, 200, WATER_SIZE)) {
+	if(!init_water(256, 256, WATER_SIZE)) {
 		fprintf(stderr, "failed to initialize water sim\n");
 		return false;
 	}
@@ -80,11 +88,24 @@ bool GameScreen::init()
 		ice_mesh[i] = new Mesh;
 		floater_height[i] = gen_icepatch_mesh(ice_mesh[i]);
 	}
+
+	for(int i=0; i<NUM_TENTACLES; i++) {
+		if (!tentacle[i].init()) {
+			fprintf(stderr, "Failed to initialize tentacle.\n");
+			return false;
+		}
+	}
 	return true;
 }
 
 void GameScreen::destroy()
 {
+	for(int i=0; i<NUM_FLOATERS; i++) {
+		delete ice_mesh[i];
+	}
+	for(int i=0; i<NUM_TENTACLES; i++) {
+		tentacle[i].destroy();
+	}
 	peng.destroy();
 	destroy_water();
 }
@@ -113,6 +134,18 @@ bool GameScreen::start()
 	}
 	sim.set_bounds(-WATER_SIZE / 2.0, WATER_SIZE / 2.0, -WATER_SIZE / 2.0, WATER_SIZE / 2.0);
 
+	for(int i=0; i<NUM_TENTACLES; i++) {
+		float pos[2] = {0, 0};
+
+		calc_sample_pos_rec(i, WATER_SIZE, WATER_SIZE, pos);
+
+		tentacle[i].pos.x = pos[0];
+		tentacle[i].pos.y = -100;
+		tentacle[i].pos.z = pos[1];
+		tentacle_anm[i] = (float)rand() / (float)RAND_MAX * TENTACLE_CYCLE;
+	}
+	run_tentacles = false;
+
 	// run a few simulation cycles to let the world stabilize
 	long t0 = game_timer();
 	for(int i=0; i<2048; i++) {
@@ -126,6 +159,8 @@ bool GameScreen::start()
 			floater[i]->flip();
 		}
 	}
+
+	run_tentacles = true;
 
 	peng.reset();
 	peng.parent = floater[0];
@@ -215,6 +250,26 @@ void GameScreen::update(float dt)
 	}
 
 	peng.update(dt);
+
+	if(run_tentacles) {
+		for(int i=0; i<NUM_TENTACLES; i++) {
+			tentacle_anm[i] = fmod(tentacle_anm[i] + dt, TENTACLE_CYCLE);
+
+			if(tentacle_anm[i] < M_PI * 2.0f) {
+				Vec3 surfpos = tentacle[i].pos;
+				surfpos.y = 0;
+
+				Floater *nearest = find_nearest_floater(surfpos, 0);
+				if(nearest && distance_sq(nearest->pos, surfpos) < SQ(3)) {
+					tentacle_anm[i] = 0;
+				}
+				tentacle[i].pos.y = -TENTACLE_DEPTH + sin(tentacle_anm[i] / 2.0f) * TENTACLE_DEPTH;
+			} else {
+				tentacle[i].pos.y = -TENTACLE_DEPTH;
+			}
+			tentacle[i].update(dt);
+		}
+	}
 }
 
 void GameScreen::draw()
@@ -242,6 +297,7 @@ void GameScreen::draw()
 		if(dbg_show_floaters) {
 			floater[i]->draw();
 		} else {
+			gl_mtl_diffuse(1, 1, 1);
 			ice_mesh[i]->draw();
 		}
 
@@ -253,6 +309,10 @@ void GameScreen::draw()
 	}
 
 	peng.draw();
+
+	for(int i=0; i<NUM_TENTACLES; i++) {
+		tentacle[i].draw();
+	}
 
 	draw_ui();
 }
