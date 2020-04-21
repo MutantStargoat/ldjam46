@@ -17,11 +17,11 @@ of ice, but there's no goal yet, and the tentacles won't really harm you.
 
 Credits
 -------
-Code: John Tsiombikas
-Additional code: Eleni-Maria Stea, and Zisis Sialveras.
-Procedural graphics: John Tsiombikas
-Penguin 3D model from: https://www.turbosquid.com/3d-models/3ds-penguin/653190
-Environment map from: https://learnopengl.com/Advanced-OpenGL/Cubemaps
+Code: John Tsiombikas 
+Additional code: Eleni-Maria Stea, and Zisis Sialveras. 
+Procedural graphics: John Tsiombikas 
+Penguin 3D model from: https://www.turbosquid.com/3d-models/3ds-penguin/653190 
+Environment map from: https://learnopengl.com/Advanced-OpenGL/Cubemaps 
 
 License
 -------
