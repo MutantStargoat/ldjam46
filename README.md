@@ -39,6 +39,7 @@ If you're building from git, grab the data with:
 First install all dependencies:
    - FreeGLUT
    - GLEW
-   - Assimp
 
 Then just type `make` to build.
+
+To cross-compile the windows version using mingw-w64, type `make cross`.
