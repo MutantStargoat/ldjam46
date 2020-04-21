@@ -22,9 +22,9 @@ extern struct dtx_font *dbgfont;
 extern int dbgfont_size;
 
 enum {
-	MOD_SHIFT	= 1,
-	MOD_CTRL	= 2,
-	MOD_ALT		= 4
+	KEY_MOD_SHIFT	= 1,
+	KEY_MOD_CTRL	= 2,
+	KEY_MOD_ALT		= 4
 };
 
 /* special keys */

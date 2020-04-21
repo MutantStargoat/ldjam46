@@ -1,9 +1,11 @@
 #include <stdio.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 #include "opengl.h"
 #include "scene_file.h"
+
+#ifdef USE_ASSIMP
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 static Mesh *load_mesh(const aiMesh *ai_mesh);
 
@@ -13,11 +15,10 @@ static Mesh *load_mesh(const aiMesh *ai_mesh);
 
 bool SceneFile::load(const char *fname)
 {
-	Assimp::Importer imp;
 	const aiScene *ai_scene;
 	Mesh *m;
 
-	if(!(ai_scene = imp.ReadFile(fname, ASSFLAGS))) {
+	if(!(ai_scene = aiImportFile(fname, ASSFLAGS))) {
 		fprintf(stderr, "failed to load %s\n", fname);
 		return false;
 
@@ -31,6 +32,7 @@ bool SceneFile::load(const char *fname)
 		meshes.push_back(m);
 	}
 
+	aiReleaseImport(ai_scene);
 	return true;
 }
 
@@ -77,3 +79,32 @@ static Mesh *load_mesh(const aiMesh *ai_mesh)
 
 	return m;
 }
+#else	/* DON'T USE ASSIMP */
+#include "cmesh.h"
+
+bool SceneFile::load(const char *fname)
+{
+	struct cmesh *cm = cmesh_alloc();
+
+	if(!cm || cmesh_load(cm, fname) == -1) {
+		fprintf(stderr, "failed to load mesh: %s\n", fname);
+		return false;
+	}
+
+	int nverts = cmesh_attrib_count(cm, CMESH_ATTR_VERTEX);
+	int nidx = cmesh_index_count(cm);
+
+	Mesh *m = new Mesh;
+	m->set_name(fname);
+
+	m->set_attrib_data(MESH_ATTR_VERTEX, 3, nverts, cmesh_attrib_ro(cm, CMESH_ATTR_VERTEX));
+	m->set_attrib_data(MESH_ATTR_NORMAL, 3, nverts, cmesh_attrib_ro(cm, CMESH_ATTR_NORMAL));
+	m->set_attrib_data(MESH_ATTR_TEXCOORD, 2, nverts, cmesh_attrib_ro(cm, CMESH_ATTR_TEXCOORD));
+	m->set_index_data(nidx, cmesh_index_ro(cm));
+
+	cmesh_free(cm);
+
+	meshes.push_back(m);
+	return true;
+}
+#endif

@@ -11,14 +11,14 @@ Concept:
 The game was unfortunately not completed, but here it is at it stands a few
 minutes after the deadline.
 
-Run it and press F1 for instructions. You can play around with the physics
-and let the penguin jump between patches of ice, but there's no goal yet, and
-the tentacles won't really harm you.
+Run the game (use the `RUN` script on GNU/Linux) and press F1 for instructions.
+You can play around with the physics and let the penguin jump between patches
+of ice, but there's no goal yet, and the tentacles won't really harm you.
 
 Credits
 -------
 Code: John Tsiombikas
-Additional code: eleni-Maria Stea, and Zisis Sialveras.
+Additional code: Eleni-Maria Stea, and Zisis Sialveras.
 Procedural graphics: John Tsiombikas
 Penguin 3D model from: https://www.turbosquid.com/3d-models/3ds-penguin/653190
 Environment map from: https://learnopengl.com/Advanced-OpenGL/Cubemaps

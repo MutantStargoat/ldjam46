@@ -8,3 +8,7 @@
 *.pdb
 data
 game
+*.so
+*.so.*
+*.dll
+archive

@@ -28,23 +28,28 @@ LDFLAGS = $(libsys) $(libgl) -lpthread
 
 sys ?= $(shell uname -s | sed 's/MINGW.*/mingw/')
 ifeq ($(sys), mingw)
-	obj = $(src:.c=.w32.o)
+	obj = $(ccsrc:.cc=.w32.o) $(csrc:.c=.w32.o)
 	dep = $(obj:.o=.d)
 	bin = game.exe
 
-	libgl = -lopengl32 -lglu32 -lglew32
-	#TODO(zisis): link with assimp on Windoze
+	libgl = -lopengl32 -lglu32 -lglew32 -lfreeglut
 	libsys = -lmingw32 -mconsole
 
 else
 	libgl = -lGL -lGLU -lglut -lGLEW
-	libsys = -ldl -lm -lassimp
+	libsys = -ldl -lm
 endif
 
 $(bin): $(obj)
 	$(CXX) -o $@ $(obj) $(LDFLAGS)
 
 -include $(dep)
+
+%.w32.o: %.c
+	$(CC) -o $@ $(CFLAGS) -c $<
+
+%.w32.o: %.cc
+	$(CXX) -o $@ $(CFLAGS) -c $<
 
 .PHONY: clean
 clean:
@@ -53,3 +58,15 @@ clean:
 .PHONY: cleandep
 cleandep:
 	rm -f $(dep)
+
+.PHONY: cleanobj
+cleanobj:
+	rm -f $(obj)
+
+.PHONY: cross
+cross:
+	$(MAKE) CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ sys=mingw
+
+.PHONY: cross-clean
+cross-clean:
+	$(MAKE) CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ sys=mingw clean

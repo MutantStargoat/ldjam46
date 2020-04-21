@@ -17,8 +17,6 @@ public:
 
 	void update(float dt);
 	void draw();
-
-	Vec3 get_point(float t);
 };
 
 #endif // TENTACLE_H_
