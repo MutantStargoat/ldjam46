@@ -2,7 +2,7 @@ Save the penguin
 ================
 An unfinished game for the ludum dare #46 jam (theme: keep it alive).
 
-Concept:
+Concept:  
  The penguin is stranded on a patch of ice, and there are tentacle monsters in
  the water, so it's afraid to swim. Help it return to its nest by floating
  nearby pieces of ice into its path for it to hop onto, before the tentacle
